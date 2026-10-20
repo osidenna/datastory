@@ -233,7 +233,7 @@
     build(b) {
       const m = D.meteo;
       b.innerHTML = '<div class="row" data-months style="gap:6px">' + K.MOIS.map((mo, i) => '<button class="chip" data-m="' + i + '">' + mo + '</button>').join('') + '</div>' +
-        '<div class="viz"><div data-chart></div><div class="viz-caption">Température moyenne quotidienne par mois, Nouakchott, ' + m.periode[0].slice(0, 4) + '–' + m.periode[1].slice(0, 4) + '. Fichier <code>Temp_NKC.csv</code> (TP1).</div></div><div data-after></div>';
+        '<div class="viz"><div data-chart></div><div class="viz-caption">Température moyenne quotidienne par mois, Nouakchott, ' + m.periode[0].slice(0, 4) + '–' + m.periode[1].slice(0, 4) + '.</div></div><div data-after></div>';
       const W = 680, H = 280, l = 40, r = 10, t = 28, bt = 30;
       const x = i => l + (W - l - r) / 12 * (i + .5), y = scale(0, 32, H - bt, t), bw = (W - l - r) / 12 * .7;
       const hot = m.temp.indexOf(Math.max(...m.temp));
@@ -620,7 +620,7 @@
     build(b) {
       const on = {}; CLUTTER.forEach(c => { on[c[0]] = true; });
       b.innerHTML = '<div class="viz"><div data-chart></div><div class="meter" aria-hidden="true"><i></i></div><div class="small" data-meter></div>' +
-        '<div class="viz-caption">Fichier <code>trend.csv</code> (TP1) : Google Trends, recherches « Bac » en Mauritanie, ' + D.trend.dates[0].slice(0, 4) + '–' + D.trend.dates[D.trend.dates.length - 1].slice(0, 4) + '.</div></div>' +
+        '<div class="viz-caption">Google Trends, recherches « Bac » en Mauritanie, ' + D.trend.dates[0].slice(0, 4) + '–' + D.trend.dates[D.trend.dates.length - 1].slice(0, 4) + '.</div></div>' +
         '<div class="clutter-list">' + CLUTTER.map(c => '<button class="chip" data-k="' + c[0] + '">✕ ' + c[1] + '</button>').join('') + '</div>' +
         '<div class="row" style="margin-top:12px"><button class="btn btn-primary" data-story disabled>Ajouter le message</button></div><div data-after></div>';
       const draw = story => {

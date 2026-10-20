@@ -1,4 +1,4 @@
-/* Routeur et rendu : accueil (plan des 16 séances) et pages de leçon.
+/* Routeur et rendu : accueil (plan des séances) et pages de leçon.
    Leçon = suite d'étapes révélées une à une (« Continuer »), ou toutes d'un coup (« Tout afficher »).
    « Présenter » : une étape par écran, flèches du clavier, Échap pour sortir. */
 (function () {
@@ -9,14 +9,14 @@
   function home() {
     document.title = S.short + ' · ' + S.program;
     bar.style.width = '0';
-    const counts = {CM: 0, TD: 0, TP: 0};
+    const counts = {CM: 0, TD: 0};
     S.sessions.forEach(s => counts[s.type]++);
     app.innerHTML = '<main class="home">' +
       '<section class="home-hero"><div><h1>' + S.title + '</h1>' +
       '<p>Transformer une analyse en un message que l’on voit, que l’on comprend et que l’on retient. Sur des données mauritaniennes réelles.</p>' +
-      '<p class="home-meta">' + esc(S.teacher) + ' · ' + S.program + ' · ' + S.edition + ' · 16 séances de 1 h 30</p></div>' +
+      '<p class="home-meta">' + esc(S.teacher) + ' · ' + S.program + ' · ' + S.edition + ' · ' + S.sessions.length + ' séances de 1 h 30</p></div>' +
       '<div class="mascots-row" style="display:flex;gap:4px;justify-content:center">' + ['cat', 'dog', 'lion', 'ghost'].map(k => M.mascot(k, {className: 'hero-mascot'})).join('') + '</div></section>' +
-      '<div class="legend-types"><span><span class="badge badge-CM">CM</span> cours (' + counts.CM + ')</span><span><span class="badge badge-TD">TD</span> travaux dirigés (' + counts.TD + ')</span><span><span class="badge badge-TP">TP</span> travaux pratiques (' + counts.TP + ')</span></div>' +
+      '<div class="legend-types"><span><span class="badge badge-CM">CM</span> cours (' + counts.CM + ')</span><span><span class="badge badge-TD">TD</span> travaux dirigés (' + counts.TD + ')</span></div>' +
       '<ol class="plan">' + S.sessions.map((s, i) => {
         const inner = '<span class="plan-num">' + (i + 1) + '</span><span class="badge badge-' + s.type + '">' + s.type + ' ' + s.n + '</span>' +
           '<span><span class="plan-title">' + s.title + '</span><span class="plan-gist">' + s.gist + '</span></span>' +

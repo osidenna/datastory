@@ -1,4 +1,4 @@
-/* Structure du cours : même format qu'en 2025-2026 (24 h = 16 séances de 1 h 30 : 5 CM, 5 TD, 6 TP).
+/* Structure du site : 5 CM et 5 TD de 1 h 30 (format 2025-2026). Les 6 TP sont gérés à part, hors du site.
    « from » = support de l'an dernier dont la séance est tirée. status : 'ready' | 'soon'. */
 window.DS_SYLLABUS = {
   title: 'Data storytelling et communication des résultats',
@@ -13,10 +13,6 @@ window.DS_SYLLABUS = {
       gist: 'Un même graphique, trois bibliothèques, trois philosophies.', from: 'td1.ipynb'},
     {id: 'cm2', type: 'CM', n: 2, title: 'Formes de visualisation et principes d’efficacité', status: 'soon',
       gist: 'Choisir le bon graphique, data-ink, Gestalt, couleur.', from: 'lecture2.pdf'},
-    {id: 'tp1', type: 'TP', n: 1, title: 'Critiquer puis refaire un graphique', status: 'soon',
-      gist: 'Désencombrer, choisir, corriger un graphique trompeur.', from: 'tp1.pdf, ex. 1–5'},
-    {id: 'tp2', type: 'TP', n: 2, title: 'Le temps qui passe : Bac, météo, Stack Overflow', status: 'soon',
-      gist: 'Séries temporelles réelles, annotations et mises en évidence.', from: 'tp1.pdf, ex. 6–9'},
     {id: 'td2', type: 'TD', n: 2, title: 'Visualisations interactives avec Bokeh', status: 'soon',
       gist: 'Survol, zoom, curseurs : l’interaction au service du récit.', from: 'bokeh.ipynb'},
     {id: 'cm3', type: 'CM', n: 3, title: 'Le SIG comme outil de storytelling', status: 'soon',
@@ -25,19 +21,11 @@ window.DS_SYLLABUS = {
       gist: 'Joindre résultats et moughataas, cartes choroplèthes.', from: 'GeoPandas.ipynb'},
     {id: 'td4', type: 'TD', n: 4, title: 'Cartographier la Mauritanie avec QGIS', status: 'soon',
       gist: 'Population, relief, bâtiments et santé en couches.', from: 'td3-intro.pdf, td3.zip'},
-    {id: 'tp3', type: 'TP', n: 3, title: 'Une décennie de bac, wilaya par wilaya', status: 'soon',
-      gist: 'Nettoyer, joindre, cartographier, animer.', from: 'tp2.pdf, ex. 1'},
-    {id: 'tp4', type: 'TP', n: 4, title: 'Les lieux de Mauritanie (RIM Venues)', status: 'soon',
-      gist: 'Valeurs manquantes, intervalles, carte hexbin interactive.', from: 'tp2.pdf, ex. 2'},
     {id: 'cm4', type: 'CM', n: 4, title: 'Dashboards : approche Python', status: 'soon',
       gist: 'État, logique, vues ; vues liées ; théâtre de l’interactivité.', from: 'cm4.pptx'},
     {id: 'td5', type: 'TD', n: 5, title: 'Construire un petit dashboard', status: 'soon',
       gist: 'Trois paramètres directeurs, des vues liées.', from: 'nouveau'},
     {id: 'cm5', type: 'CM', n: 5, title: 'Outils BI, données qualitatives, crowdsourcing', status: 'soon',
-      gist: 'Ce que le « no-code » cache, et quand il suffit.', from: 'annoncé dans cm4.pptx'},
-    {id: 'tp5', type: 'TP', n: 5, title: 'Atelier projet : du jeu de données au récit', status: 'soon',
-      gist: 'Problématique, message clé, maquette du récit.', from: 'projet.pdf'},
-    {id: 'tp6', type: 'TP', n: 6, title: 'Soutenances : data storytelling à la mauritanienne', status: 'soon',
-      gist: '10–12 minutes pour convaincre.', from: 'projet.pdf'}
+      gist: 'Ce que le « no-code » cache, et quand il suffit.', from: 'annoncé dans cm4.pptx'}
   ]
 };
