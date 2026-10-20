@@ -64,7 +64,7 @@ mark { color: inherit; padding: .12em .34em .1em; margin: 0 -.1em; -webkit-box-d
 
 /* Accueil */
 .home { max-width: 980px; margin: 0 auto; padding: 56px 20px 80px; }
-.home-hero { display: grid; grid-template-columns: 1fr 260px; gap: 36px; align-items: center; margin-bottom: 44px; }
+.home-hero { margin-bottom: 44px; }
 .home-hero h1 { font-size: 46px; margin-bottom: 14px; }
 .home-hero p { font-size: 19px; color: var(--ink-2); max-width: 560px; }
 .home-meta { font-size: 14px; color: var(--muted); }
@@ -243,8 +243,6 @@ body.present .present-bar { display: flex; }
   body { font-size: 17px; }
   h1, .lesson-head h1, .home-hero h1 { font-size: 32px; }
   .step h2 { font-size: 25px; }
-  .home-hero { grid-template-columns: 1fr; }
-  .home-hero .mascots-row { display: none; }
   .plan a, .plan .plan-row { grid-template-columns: 22px 44px 1fr; }
   .plan-status { grid-column: 3; }
   .header-nav .edition { display: none; }

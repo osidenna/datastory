@@ -14,8 +14,7 @@
     app.innerHTML = '<main class="home">' +
       '<section class="home-hero"><div><h1>' + S.title + '</h1>' +
       '<p>Transformer une analyse en un message que l’on voit, que l’on comprend et que l’on retient. Sur des données mauritaniennes réelles.</p>' +
-      '<p class="home-meta">' + esc(S.teacher) + ' · ' + S.program + ' · ' + S.edition + ' · ' + S.sessions.length + ' séances de 1 h 30</p></div>' +
-      '<div class="mascots-row" style="display:flex;gap:4px;justify-content:center">' + ['cat', 'dog', 'lion', 'ghost'].map(k => M.mascot(k, {className: 'hero-mascot'})).join('') + '</div></section>' +
+      '<p class="home-meta">' + esc(S.teacher) + ' · ' + S.program + ' · ' + S.edition + ' · ' + S.sessions.length + '&nbsp;séances de 1&nbsp;h&nbsp;30</p></div></section>' +
       '<div class="legend-types"><span><span class="badge badge-CM">CM</span> cours (' + counts.CM + ')</span><span><span class="badge badge-TD">TD</span> travaux dirigés (' + counts.TD + ')</span></div>' +
       '<ol class="plan">' + S.sessions.map((s, i) => {
         const inner = '<span class="plan-num">' + (i + 1) + '</span><span class="badge badge-' + s.type + '">' + s.type + ' ' + s.n + '</span>' +
