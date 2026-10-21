@@ -5,6 +5,7 @@
   const S = window.DS_SYLLABUS, L = window.DS_LESSONS || {}, M = window.Mascots;
   const app = document.getElementById('app'), bar = document.querySelector('.progress');
   const esc = window.Kit.esc;
+  const PROF = /(^|[?&])prof\b/.test(location.search);
 
   function home() {
     document.title = S.short + ' · ' + S.program;
@@ -34,7 +35,7 @@
     try { unlocked = Math.max(1, Math.min(les.steps.length, +localStorage.getItem(key) || 1)); } catch (e) { /* stockage indisponible */ }
     app.innerHTML = '<main class="lesson"><header class="lesson-head"><div class="crumbs"><a href="#/">Le cours</a> / ' + ses.type + ' ' + ses.n + '</div>' +
       '<h1>' + les.title + '</h1><p class="lede">' + les.lede + '</p>' +
-      '<div class="lesson-tools"><button class="tool" data-present>▶ Présenter</button><button class="tool" data-all>Tout afficher</button><button class="tool" data-restart>Recommencer</button><span class="small" style="align-self:center">' + les.steps.length + ' activités · ' + les.minutes + ' min</span></div></header>' +
+      '<div class="lesson-tools"><button class="tool" data-present>▶ Présenter</button><button class="tool" data-all>Tout afficher</button><button class="tool" data-restart>Recommencer</button><span class="small" style="align-self:center">' + (les.plan ? Object.keys(les.plan).length : les.steps.length) + ' activités · ' + les.minutes + ' min' + (les.reserve ? ' · + réserve' : '') + '</span></div></header>' +
       '<div data-steps></div></main><div class="present-bar"><button data-prev aria-label="Étape précédente">←</button><span data-pos></span><button data-next aria-label="Étape suivante">→</button><button data-exit>Quitter</button></div>';
     const host = app.querySelector('[data-steps]');
     const nodes = [];
@@ -42,11 +43,21 @@
       const st = les.steps[i];
       const sec = document.createElement('section');
       sec.className = 'step'; sec.id = st.id;
-      sec.innerHTML = '<div class="step-kicker"><span class="n">' + (i + 1) + ' / ' + les.steps.length + '</span><span>' + st.kicker + '</span></div>' +
+      // Repère de temps réservé à l'enseignante : ouvrir le site avec ?prof (ex. …/datastory/?prof#/cm1).
+      let cue = '';
+      if (PROF && les.plan) {
+        const before = les.steps.slice(0, i).reduce((acc, x) => acc + (les.plan[x.id] || 0), 0), m = les.plan[st.id];
+        cue = m ? '<span class="prof-cue">≈ ' + m + ' min · ' + before + '→' + (before + m) + ' min</span>'
+          : (les.reserve && les.reserve[st.id] ? '<span class="prof-cue">réserve · ≈ ' + les.reserve[st.id] + ' min</span>' : '');
+      }
+      sec.innerHTML = '<div class="step-kicker"><span class="n">' + (i + 1) + ' / ' + les.steps.length + '</span><span>' + st.kicker + '</span>' + cue + '</div>' +
         '<h2>' + st.title + '</h2><p class="step-lead">' + st.lead + '</p><div class="step-body"></div>' +
-        (i < les.steps.length - 1 ? '<div class="continue"><button class="btn btn-primary">Continuer</button></div>' : '<p class="done-note">Fin du CM. Bravo !</p>');
+        (i < les.steps.length - 1 ? '<div class="continue"><button class="btn btn-primary">' + (st.next || 'Continuer') + '</button></div>' : '<p class="done-note">Fin du CM. Bravo !</p>');
       host.appendChild(sec);
-      st.build(sec.querySelector('.step-body'));
+      const body = sec.querySelector('.step-body');
+      st.build(body);
+      // En projection : visuel principal à gauche, question et commandes à droite.
+      if (body.querySelector(':scope > .main')) body.classList.add('split');
       const c = sec.querySelector('.continue button');
       if (c) c.addEventListener('click', () => { c.parentNode.hidden = true; reveal(i + 1, true); });
       nodes[i] = sec;
@@ -74,7 +85,9 @@
       cur = Math.max(0, Math.min(les.steps.length - 1, i));
       reveal(cur, false);
       nodes.forEach((n, j) => n && n.classList.toggle('is-current', j === cur));
-      pos.textContent = (cur + 1) + ' / ' + les.steps.length;
+      const plan = les.plan || {}, mins = plan[les.steps[cur].id];
+      const before = les.steps.slice(0, cur).reduce((acc, st) => acc + (plan[st.id] || 0), 0);
+      pos.textContent = (cur + 1) + ' / ' + les.steps.length + (mins ? ' · ≈ ' + mins + ' min · repère ' + before + '→' + (before + mins) + ' min' : '');
       window.scrollTo(0, 0);
     };
     const key2 = e => {

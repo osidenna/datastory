@@ -106,8 +106,8 @@
     build(b) {
       const rows = bac.years.map((yr, i) => '<tr><td>' + yr + '</td><td>' + fr(bac.candidats[i]) + '</td><td>' + fr(bac.admis[i]) + '</td><td>' + fr(bac.taux[i], 1) + '</td></tr>').join('');
       b.innerHTML = '<div class="row"><button class="btn btn-primary" data-go>Lancer le chrono</button><span class="timer" aria-live="polite"></span></div>' +
-        '<div class="viz"><table class="data blurred" aria-hidden="true"><thead><tr><th>Année</th><th>Candidats</th><th>Admis</th><th>Taux (%)</th></tr></thead><tbody>' + rows + '</tbody></table>' +
-        '<div class="viz-caption">' + SRC_BAC + '</div></div><div data-q></div><div data-story hidden></div>';
+        '<div class="main"><div class="viz"><table class="data blurred" aria-hidden="true"><thead><tr><th>Année</th><th>Candidats</th><th>Admis</th><th>Taux (%)</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+        '<div class="viz-caption">' + SRC_BAC + '</div></div><div data-story hidden></div></div><div data-q></div>';
       const table = b.querySelector('table'), timer = b.querySelector('.timer'), go = b.querySelector('[data-go]');
       go.addEventListener('click', () => {
         go.disabled = true; table.classList.remove('blurred'); table.removeAttribute('aria-hidden');
@@ -128,7 +128,7 @@
         cols: 2,
         onSolved() {
           const st = b.querySelector('[data-story]');
-          st.hidden = false;
+          st.hidden = false; st.parentNode.classList.add('has-story');
           st.innerHTML = '<div class="viz">' + bacChart({D: 1, V: 1, N: 1}) + '<div class="viz-caption">' + SRC_BAC + '</div></div>' +
             M.note('lion', '<p><b>Les faits informent, les histoires convainquent.</b> Mêmes données, même vérité : seule la forme a changé.</p>');
         }
@@ -136,27 +136,72 @@
     }
   });
 
-  // 2. Les trois piliers.
+  // 2. Fondations historiques : la carte de John Snow (Londres, 1854), en défilement.
+  steps.push({
+    id: 'john-snow', kicker: 'Fondations historiques', title: 'Londres, 1854 : d’où vient le choléra ?',
+    lead: 'Faites défiler : la carte raconte l’histoire.',
+    build(b) {
+      const S = D.snow, xs = S.streets.flat().map(p => p[0]), ys = S.streets.flat().map(p => p[1]);
+      const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+      const k = 34, pad = 14, W = (x1 - x0) * k + 2 * pad, H = (y1 - y0) * k + 2 * pad;
+      const X = v => pad + (v - x0) * k, Y = v => pad + (y1 - v) * k;
+      const near = S.deaths.map(([dx, dy]) => {
+        let best = 0, bd = Infinity;
+        S.pumps.forEach((p, i) => { const d2 = (p.x - dx) ** 2 + (p.y - dy) ** 2; if (d2 < bd) { bd = d2; best = i; } });
+        return best;
+      });
+      const pct = Math.round(100 * S.nearBroad / S.deaths.length);
+      const halo = 'paint-order:stroke;stroke:#fff;stroke-width:5px;stroke-linejoin:round';
+      const draw = st => {
+        const colour = st >= 4;
+        let s = '<rect width="' + W + '" height="' + H + '" fill="#fbfaf7"/>';
+        s += S.streets.map(l => '<path d="' + path(l.map(p => [X(p[0]), Y(p[1])])) + '" fill="none" stroke="#cfd3da" stroke-width="2.4" stroke-linecap="round"/>').join('');
+        s += S.deaths.map(([dx, dy], i) => '<circle cx="' + X(dx).toFixed(1) + '" cy="' + Y(dy).toFixed(1) + '" r="2.8" fill="' + (colour ? (near[i] === S.broad ? ACC : GREY) : INK) + '" opacity="' + (colour && near[i] !== S.broad ? .5 : .85) + '"/>').join('');
+        if (st >= 2) S.pumps.forEach((p, i) => {
+          const cx = X(p.x), cy = Y(p.y), on = st >= 3 && i === S.broad;
+          s += '<path class="fade-in" d="M' + cx + ' ' + (cy - 11) + 'L' + (cx + 10) + ' ' + (cy + 8) + 'L' + (cx - 10) + ' ' + (cy + 8) + 'Z" fill="' + (on ? ACC : '#2f6f9f') + '" stroke="#fff" stroke-width="1.5"/>';
+          if (on) s += '<circle cx="' + cx + '" cy="' + cy + '" r="24" fill="none" stroke="' + ACC + '" stroke-width="2.5"/>' +
+            '<text x="' + (cx + 30) + '" y="' + (cy + 6) + '" class="lbl-accent" style="font-size:17px;' + halo + '">Broad Street</text>';
+          if (on && st >= 5) s += '<text x="' + (cx + 30) + '" y="' + (cy + 28) + '" style="font-size:14px;fill:' + INK + ';' + halo + '">poignée retirée le 8 septembre</text>';
+        });
+        return svg(W, H, s, 'snow');
+      };
+      K.scrolly(b, {
+        steps: [
+          '<p>Fin août 1854, quartier de Soho, à Londres. En quelques jours, le choléra tue <b>' + S.deaths.length + ' personnes</b>. John Snow place chaque décès sur une carte.</p>',
+          '<p>Les médecins de l’époque accusent l’<b>air vicié</b> (les « miasmes »).</p><span class="sc-ask">Si c’était l’air, à quoi ressemblerait la carte ?</span>',
+          '<p>Snow, lui, soupçonne l’<b>eau</b>. Il ajoute les <b>13 pompes</b> du quartier.</p><span class="sc-ask">Quelle pompe soupçonnez-vous ?</span>',
+          '<p>La pompe de <b>Broad Street</b>, au cœur de l’épidémie.</p>',
+          '<p><b>' + pct + ' % des décès</b> (' + S.nearBroad + ' sur ' + S.deaths.length + ') sont plus proches, à vol d’oiseau, de cette pompe que de toutes les autres.</p>',
+          '<p>Le 8 septembre 1854, Snow obtient qu’on <b>retire la poignée</b> de la pompe.</p><p>Des données (les décès), une visualisation (la carte), une narration (la pompe) : l’un des premiers grands <mark>récits de données</mark>.</p>'
+        ],
+        render(el, i) { el.innerHTML = draw(i) + '<div class="viz-caption">Chaque point = un décès relevé par John Snow. Données : paquet R <i>HistData</i>, d’après la carte de Snow.</div>'; }
+      });
+    }
+  });
+
+  // 3. Les trois piliers, en défilement.
   steps.push({
     id: 'piliers', kicker: 'Les 3 piliers', title: 'Données, visualisation, narration',
-    lead: 'Allumez et éteignez chaque pilier. Que se passe-t-il quand il en manque un ?',
+    lead: 'Faites défiler : on ajoute, puis on retire, un pilier à la fois.',
     build(b) {
-      const st = {D: 1, V: 0, N: 0};
-      b.innerHTML = '<div class="pillars">' +
-        '<button class="pillar" data-p="D" aria-pressed="true"><b>Données</b><span>sur quoi on s’appuie</span></button>' +
-        '<button class="pillar" data-p="V" aria-pressed="false"><b>Visualisation</b><span>comment on montre</span></button>' +
-        '<button class="pillar" data-p="N" aria-pressed="false"><b>Narration</b><span>l’histoire qu’on raconte</span></button></div>' +
-        '<div class="viz"><div data-chart></div><p class="small" data-verdict style="margin:8px 0 0"></p></div><div data-q></div>';
-      const draw = () => {
-        b.querySelector('[data-chart]').innerHTML = bacChart(st);
-        const key = ['D', 'V', 'N'].filter(k => st[k]).join('');
-        b.querySelector('[data-verdict]').innerHTML = '<b>' + PILLAR_VERDICT[key] + '</b>';
-      };
-      b.querySelectorAll('.pillar').forEach(p => p.addEventListener('click', () => {
-        st[p.dataset.p] ^= 1; p.setAttribute('aria-pressed', st[p.dataset.p] ? 'true' : 'false'); draw();
-      }));
-      draw();
-      question(b.querySelector('[data-q]'), {
+      const states = [{D: 1}, {D: 1, V: 1}, {D: 1, V: 1, N: 1}, {V: 1, N: 1}, {N: 1}, {D: 1, V: 1, N: 1}];
+      K.scrolly(b, {
+        steps: [
+          '<p><b>Données</b> seules : exactes… mais muettes. Qui voit la tendance ?</p>',
+          '<p>+ <b>Visualisation</b> : on voit la tendance.</p><span class="sc-ask">Mais que faut-il retenir ?</span>',
+          '<p>+ <b>Narration</b> : un titre qui dit le message, deux points en couleur, une annotation.</p>',
+          '<p>Retirons les <b>données</b> : une belle histoire… sur rien.</p>',
+          '<p>Retirons aussi la <b>visualisation</b> : il ne reste qu’une opinion.</p>',
+          '<p><mark>Il faut les trois piliers.</mark> Données : sur quoi on s’appuie. Visualisation : comment on montre. Narration : l’histoire qu’on raconte.</p>'
+        ],
+        render(el, i) {
+          const st = states[i], key = ['D', 'V', 'N'].filter(k => st[k]).join('');
+          el.innerHTML = bacChart(st) + '<p class="small" style="margin:8px 0 0"><b>' + PILLAR_VERDICT[key] + '</b></p>';
+        }
+      });
+      const q = document.createElement('div'); b.appendChild(q);
+      question(q, {
         prompt: 'Un graphique superbe, au message clair… construit sur un sondage de 20 personnes de la même classe. Quel pilier est fragile ?',
         options: [
           {t: 'Les données', ok: true, why: 'Tout repose sur les données. Belle forme + belle histoire sur un mauvais échantillon = belle erreur.'},
@@ -167,12 +212,12 @@
     }
   });
 
-  // 3. Pilier données : les avions.
+  // 4. Pilier données : les avions.
   steps.push({
     id: 'avions', kicker: 'Pilier données', title: 'Où blinder les avions ?',
     lead: '1943. Chaque point rouge est un impact de balle relevé sur les bombardiers <b>revenus</b> de mission. On peut blinder une seule zone.',
     build(b) {
-      b.innerHTML = '<div class="viz" style="max-width:520px;margin-inline:auto">' + planeSVG() + '<div class="viz-caption">Cliquez une zone de l’avion, ou choisissez ci-dessous. Schéma d’après l’étude d’Abraham Wald.</div></div><div data-q></div><div data-after hidden></div>';
+      b.innerHTML = '<div class="viz main" style="max-width:520px;margin-inline:auto">' + planeSVG() + '<div class="viz-caption">Schéma d’après l’étude d’Abraham Wald.</div></div><div data-q></div><div data-after hidden></div>';
       const opts = ['Les ailes', 'Le fuselage', 'La queue', 'Les moteurs'];
       const q = question(b.querySelector('[data-q]'), {
         prompt: 'Où ajouter du blindage ?', mascot: 'cat', cols: 2,
@@ -200,7 +245,7 @@
     }
   });
 
-  // 4. Qui manque ? Le fichier des prénoms.
+  // 5. Qui manque ? Le fichier des prénoms.
   steps.push({
     id: 'qui-manque', kicker: 'Pilier données', title: 'Qui manque dans ce fichier ?',
     lead: 'Un fichier contient ' + fr(D.prenoms.total) + ' prénoms mauritaniens avec l’année de naissance. Voici leur répartition.',
@@ -212,7 +257,7 @@
       [1960, 1970, 1980, 1990, 2000, 2010].forEach(yr => { s += '<text x="' + x(yr) + '" y="' + (H - bt + 20) + '" text-anchor="middle">' + yr + '</text>'; });
       s += '<g data-late hidden><rect x="' + x(2007.5) + '" y="' + t + '" width="' + (x(2011) - x(2007.5)) + '" height="' + (y(0) - t) + '" fill="' + BAD + '" opacity=".08"/>' +
         '<text x="' + x(2009.2) + '" y="' + (t + 16) + '" text-anchor="middle" style="fill:' + BAD + ';font-weight:700">vide</text></g>';
-      b.innerHTML = '<div class="viz">' + svg(W, H, s) + '<div class="viz-caption">Nombre de personnes par année de naissance dans le fichier.</div></div><div data-q></div>';
+      b.innerHTML = '<div class="viz main">' + svg(W, H, s) + '<div class="viz-caption">Nombre de personnes par année de naissance dans le fichier.</div></div><div data-q></div>';
       question(b.querySelector('[data-q]'), {
         prompt: 'Que nous apprend ce fichier sur les prénoms donnés aux enfants nés en 2015 ?',
         options: [
@@ -226,14 +271,14 @@
     }
   });
 
-  // 5. Biais de confirmation : le mois le plus chaud à Nouakchott.
+  // 6. Biais de confirmation : le mois le plus chaud à Nouakchott.
   steps.push({
     id: 'nouakchott', kicker: 'Pilier données', title: '« Let the dataset change your mindset »',
-    lead: 'Prédiction d’abord : quel est le mois le plus chaud à Nouakchott ? Choisissez avant de voir les données.',
+    lead: 'Prédiction d’abord : quel est le mois le plus chaud à Nouakchott ? Votez avant de voir les données.',
     build(b) {
       const m = D.meteo;
       b.innerHTML = '<div class="row" data-months style="gap:6px">' + K.MOIS.map((mo, i) => '<button class="chip" data-m="' + i + '">' + mo + '</button>').join('') + '</div>' +
-        '<div class="viz"><div data-chart></div><div class="viz-caption">Température moyenne quotidienne par mois, Nouakchott, ' + m.periode[0].slice(0, 4) + '–' + m.periode[1].slice(0, 4) + '.</div></div><div data-after></div>';
+        '<div class="viz main"><div data-chart></div><div class="viz-caption">Température moyenne quotidienne par mois, Nouakchott, ' + m.periode[0].slice(0, 4) + '–' + m.periode[1].slice(0, 4) + '.</div></div><div data-after></div>';
       const W = 680, H = 280, l = 40, r = 10, t = 28, bt = 30;
       const x = i => l + (W - l - r) / 12 * (i + .5), y = scale(0, 32, H - bt, t), bw = (W - l - r) / 12 * .7;
       const hot = m.temp.indexOf(Math.max(...m.temp));
@@ -246,7 +291,7 @@
             s += '<rect class="grow" style="animation-delay:' + i * 50 + 'ms" x="' + (x(i) - bw / 2) + '" y="' + y(v) + '" width="' + bw + '" height="' + (y(0) - y(v)) + '" fill="' + (i === hot ? ACC : GREY2) + '"' + (i === pick && i !== hot ? ' stroke="' + BAD + '" stroke-width="2.5"' : '') + '/>';
             if (i === hot || i === pick || i === 6) s += '<text x="' + x(i) + '" y="' + (y(v) - 7) + '" text-anchor="middle" class="' + (i === hot ? 'lbl-accent' : 'lbl-strong') + '">' + fr(v, 1) + '</text>';
           });
-          if (pick !== hot) s += '<text x="' + x(pick) + '" y="' + (y(m.temp[pick]) - 24) + '" text-anchor="middle" style="fill:' + BAD + ';font-weight:700">votre choix</text>';
+          if (pick !== hot) s += '<text x="' + x(pick) + '" y="' + (y(m.temp[pick]) - 24) + '" text-anchor="middle" style="fill:' + BAD + ';font-weight:700">prédiction</text>';
         }
         b.querySelector('[data-chart]').innerHTML = svg(W, H, s);
       };
@@ -264,7 +309,7 @@
     }
   });
 
-  // 6. Pilier visualisation : la complexité inutile.
+  // 7. Pilier visualisation : la complexité inutile.
   function complexChart() {
     const W = 680, H = 360, l = 54, r = 50, t = 40, bt = 86;
     const x = scale(2014.5, 2025.5, l, W - r), yl = scale(0, 60000, H - bt, t), yr = scale(0, 45, H - bt, t);
@@ -303,8 +348,8 @@
     id: 'complexite', kicker: 'Pilier visualisation', title: 'La complexité inutile',
     lead: 'Une seule question : <b>en 2024, quelle série a le meilleur taux d’admission ?</b> Répondez avec ce graphique.',
     build(b) {
-      b.innerHTML = '<div class="viz"><div data-chart>' + complexChart() + '</div><div class="viz-caption">' + SRC_BAC + '</div></div>' +
-        '<div class="row"><button class="btn" data-simple>Simplifier</button><span class="small">Essayez d’abord sans.</span></div><div data-q></div><div data-after></div>';
+      b.innerHTML = '<div class="viz main"><div data-chart>' + complexChart() + '</div><div class="viz-caption">' + SRC_BAC + '</div></div>' +
+        '<div class="row"><button class="btn" data-simple>Simplifier</button><span class="small">D’abord sans simplifier.</span></div><div data-q></div><div data-after></div>';
       const btn = b.querySelector('[data-simple]');
       let simple = false;
       btn.addEventListener('click', () => {
@@ -316,7 +361,7 @@
         prompt: 'En 2024, quelle série a le meilleur taux d’admission ?', cols: 2,
         options: [
           {t: 'SN', why: 'SN : 23,3 %. Les quatre lignes bleues se ressemblent trop pour être lues.'},
-          {t: 'M', ok: true, why: 'M : 41,6 %, loin devant LO (24,8 %) et SN (23,3 %). Cliquez sur « Simplifier » : la réponse saute aux yeux.'},
+          {t: 'M', ok: true, why: 'M : 41,6 %, loin devant LO (24,8 %) et SN (23,3 %). Avec « Simplifier », la réponse saute aux yeux.'},
           {t: 'LM', why: 'LM est la plus basse : 10,0 %. La légende, loin des lignes, oblige à des allers-retours.'},
           {t: 'LO', why: 'LO : 24,8 %, deuxième. Deux axes verticaux, quatre bleus : l’œil se perd.'}
         ],
@@ -327,7 +372,7 @@
     }
   });
 
-  // 7. La forme avant la fonction ? Course contre la montre.
+  // 8. La forme avant la fonction ? Course contre la montre.
   function radial(rows, done) {
     const W = 600, H = 600, cx = 300, cy = 300, r0 = 50, k = 5.4;
     let s = '<circle cx="' + cx + '" cy="' + cy + '" r="' + r0 + '" fill="none" stroke="#eee"/>';
@@ -360,13 +405,13 @@
   }
   steps.push({
     id: 'forme', kicker: 'Pilier visualisation', title: 'Joli, ou lisible ?',
-    lead: 'Défi chronométré : <b>cliquez sur la wilaya qui a le 3<sup>e</sup> meilleur taux d’admission en 2025.</b> Deux manches, deux graphiques.',
+    lead: 'Défi chronométré : <b>quelle wilaya a le 3<sup>e</sup> meilleur taux d’admission en 2025 ?</b> Levez la main dès que vous savez. Deux manches, deux graphiques.',
     build(b) {
       const rows = bac.wilaya2025;
       const target = rows.slice().sort((a, c) => c.taux - a.taux)[2].w;
       const res = [];
       b.innerHTML = '<div class="row"><button class="btn btn-primary" data-start>Manche 1 : partez !</button><span class="timer" aria-live="polite"></span></div>' +
-        '<div class="viz" data-stage style="min-height:120px"><p class="small" style="margin:0">Le graphique apparaîtra au départ du chrono.</p></div><div data-result></div>';
+        '<div class="viz main" data-stage style="min-height:120px"><p class="small" style="margin:0">Le graphique apparaîtra au départ du chrono.</p></div><div data-result></div>';
       const stage = b.querySelector('[data-stage]'), timer = b.querySelector('.timer'), start = b.querySelector('[data-start]'), out = b.querySelector('[data-result]');
       let t0 = 0, errors = 0, iv = 0, round = 0;
       const run = () => {
@@ -397,7 +442,7 @@
     }
   });
 
-  // 8. Pilier narration : quatre styles.
+  // 9. Pilier narration : quatre styles.
   const STYLES = ['Analytique', 'Littéraire', 'Numérique', 'Journalistique'];
   const TEXTS = [
     {s: 3, t: '<b>Bac 2024 : plus d’un candidat sur cinq admis, un record depuis 2015.</b>'},
@@ -407,7 +452,7 @@
   ];
   steps.push({
     id: 'narration', kicker: 'Pilier narration', title: 'Quatre façons de raconter',
-    lead: 'Même résultat, quatre textes. Associez chacun à son style.',
+    lead: 'Même résultat, quatre textes. Quel style pour chacun ?',
     build(b) {
       const pick = TEXTS.map(() => -1);
       b.innerHTML = '<div class="styles-grid">' + TEXTS.map((x, i) => '<div class="style-card" data-i="' + i + '"><p>' + x.t + '</p><div class="row">' +
@@ -444,7 +489,7 @@
     }
   });
 
-  // 9. La pyramide inversée.
+  // 10. La pyramide inversée.
   const PYR = [
     {lvl: 0, t: 'Plus d’un candidat sur cinq admis au bac 2024 : un record depuis 2015.'},
     {lvl: 1, t: 'La série M atteint 41,6 % ; les Lettres modernes restent à 10,0 %.'},
@@ -453,7 +498,7 @@
   const PYR_SLOTS = ['L’essentiel (le « lead »)', 'Les détails clés', 'Le contexte, la méthode'];
   steps.push({
     id: 'pyramide', kicker: 'Pilier narration', title: 'La pyramide inversée',
-    lead: 'Ne gardez pas le meilleur pour la fin. Cliquez les trois blocs <b>dans l’ordre</b> où le public doit les lire.',
+    lead: 'Ne gardez pas le meilleur pour la fin. <b>Dans quel ordre</b> le public doit-il lire ces trois blocs ?',
     build(b) {
       const order = [2, 0, 1];
       b.innerHTML = '<div class="viz"><div class="pyramid">' + PYR_SLOTS.map((s, i) => '<div class="pyr-slot" data-slot="' + i + '" style="width:' + (100 - i * 22) + '%">' + s + '</div>').join('') + '</div>' +
@@ -480,18 +525,18 @@
     }
   });
 
-  // 10. L'effet madeleine de Proust : votre prénom.
+  // 11. L'effet madeleine de Proust : votre prénom.
   const norm = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z]/g, '');
   steps.push({
     id: 'madeleine', kicker: 'Émotion', title: 'L’effet « madeleine de Proust »',
-    lead: 'Les chiffres seuls sont froids. Tapez <b>votre prénom</b> (ou celui d’un proche).',
+    lead: 'Les chiffres seuls sont froids. Donnez un <b>prénom</b> : le vôtre, ou celui d’un proche.',
     build(b) {
       const P = D.prenoms, idx = {};
       Object.keys(P.noms).forEach(n => { idx[norm(n)] = n; });
       const sugg = ['Fatima', 'Mariem', 'Ahmed', 'Cheikh', 'Aicha', 'Sidi Mohamed', 'Oum Kelthoum', 'Brahim'].filter(n => P.noms[n]);
-      b.innerHTML = '<form class="name-input" autocomplete="off"><input type="text" placeholder="Votre prénom" aria-label="Prénom"><button class="btn btn-primary">Voir</button></form>' +
+      b.innerHTML = '<form class="name-input" autocomplete="off"><input type="text" placeholder="Prénom" aria-label="Prénom"><button class="btn btn-primary">Voir</button></form>' +
         '<div class="suggest">' + sugg.map(n => '<button class="chip" data-n="' + n + '">' + n + '</button>').join('') + '</div>' +
-        '<div class="viz" data-viz hidden><div data-chart></div><div class="viz-caption">Personnes portant ce prénom pour 1 000 personnes nées la même année dans le fichier, 1980–2005.</div></div><div data-q></div>';
+        '<div class="viz main" data-viz hidden><div data-chart></div><div class="viz-caption">Personnes portant ce prénom pour 1 000 personnes nées la même année dans le fichier, 1980–2005.</div></div><div data-q></div>';
       const y0 = 1980, y1 = 2005, off = y0 - P.y0;
       let asked = false;
       const show = raw => {
@@ -531,10 +576,54 @@
     }
   });
 
-  // 11. Attributs pré-attentifs : compter les 7.
+  // 12. Une classe de 30 : rendre le pourcentage humain.
+  function classroom(n, total = 30) {
+    const W = 600, H = 300, cols = 10, cw = W / cols, rh = 96;
+    let s = '';
+    for (let i = 0; i < total; i++) {
+      const cx = cw * (i % cols) + cw / 2, cy = 30 + Math.floor(i / cols) * rh, on = i < n;
+      const c = on ? ACC : GREY2;
+      s += '<g class="fade-in" style="animation-delay:' + i * 25 + 'ms"><circle cx="' + cx + '" cy="' + cy + '" r="13" fill="' + c + '"/>' +
+        '<path d="M' + (cx - 20) + ' ' + (cy + 52) + 'v-10a20 20 0 0 1 40 0v10Z" fill="' + c + '"/></g>';
+    }
+    return svg(W, H, s);
+  }
+  steps.push({
+    id: 'classe', kicker: 'Émotion', title: 'Une classe de 30 élèves',
+    lead: '« 18,8 % d’admis » reste abstrait. Imaginez une classe de terminale de <b>30 élèves</b>.',
+    build(b) {
+      const W25 = Object.fromEntries(bac.wilaya2025.map(d => [d.w, d.taux]));
+      const cases = [['Mauritanie 2025', at(2025)], ['Mauritanie 2015', at(2015)], ['Guidimagha 2025', W25['Guidimagha']], ['Hodh Chargui 2025', W25['Hodh Chargui']], ['Nouakchott Ouest 2025', W25['Nouakchott Ouest']]];
+      b.innerHTML = '<div class="viz main"><div data-chart></div><p class="small" data-cap style="margin:6px 0 0"></p><div class="viz-caption">Élèves admis sur 30, arrondi du taux d’admission réel. ' + SRC_BAC + '</div></div>' +
+        '<div class="row" style="gap:6px">' + cases.map((c, i) => '<button class="chip" data-c="' + i + '">' + c[0] + '</button>').join('') + '</div><div data-q></div>';
+      const show = i => {
+        const [lab, r] = cases[i], n = Math.round(30 * r / 100);
+        b.querySelector('[data-chart]').innerHTML = classroom(n);
+        b.querySelector('[data-cap]').innerHTML = '<b>' + lab + ' : ' + n + ' élève' + (n > 1 ? 's' : '') + ' sur 30</b> (' + fr(r, 1) + ' %).';
+        b.querySelectorAll('[data-c]').forEach(c => c.setAttribute('aria-pressed', +c.dataset.c === i ? 'true' : 'false'));
+      };
+      b.querySelectorAll('[data-c]').forEach(c => c.addEventListener('click', () => show(+c.dataset.c)));
+      show(0);
+      question(b.querySelector('[data-q]'), {
+        prompt: 'À Guidimagha, dans une classe de 30, combien d’élèves ont eu le bac en 2025 ?', cols: 2,
+        options: [
+          {t: '3', ok: true, why: '9,8 % de 30 ≈ 3 élèves. À Hodh Chargui, 7. Dit comme ça, l’écart entre wilayas devient concret.'},
+          {t: '6', why: '6, c’est la moyenne nationale (18,8 %). Guidimagha est la wilaya la plus basse : 9,8 %.'},
+          {t: '9', why: 'Ce serait 30 %. Guidimagha est à 9,8 %.'},
+          {t: '12', why: 'Ce serait 40 %, presque le taux de la série M (40,8 %). Guidimagha : 9,8 %.'}
+        ],
+        onSolved() {
+          show(2);
+          b.querySelector('[data-q]').insertAdjacentHTML('beforeend', M.note('lion', '<p><b>Traduisez les pourcentages en personnes.</b> « 3 élèves sur 30 » se voit et se retient ; « 9,8 % » se lit et s’oublie.</p>'));
+        }
+      });
+    }
+  });
+
+  // 13. Attributs pré-attentifs : compter les 7.
   steps.push({
     id: 'preattentif', kicker: 'Voir sans lire', title: 'Combien de 7 ?',
-    lead: 'Comptez les <b>7</b> dans la grille, le plus vite possible. Deux manches.',
+    lead: 'Comptez les <b>7</b> dans la grille. Levez la main dès que vous avez le nombre. Deux manches.',
     build(b) {
       const grid = (seed, sevens) => {
         const r = rng(seed), cells = [];
@@ -546,7 +635,7 @@
       const rounds = [{cells: grid(11, 9), color: false}, {cells: grid(29, 8), color: true}];
       const times = [];
       b.innerHTML = '<div class="row"><button class="btn btn-primary" data-start>Manche 1</button><span class="timer"></span></div>' +
-        '<div class="viz"><div class="numgrid blurred" data-grid aria-hidden="true">' + rounds[0].cells.map(d => '<span>' + d + '</span>').join('') + '</div></div>' +
+        '<div class="viz main"><div class="numgrid blurred" data-grid aria-hidden="true">' + rounds[0].cells.map(d => '<span>' + d + '</span>').join('') + '</div></div>' +
         '<form class="name-input" data-form hidden><input type="number" min="0" max="84" placeholder="Nombre de 7" aria-label="Nombre de 7"><button class="btn btn-primary">Valider</button></form><div data-after></div>';
       const g = b.querySelector('[data-grid]'), start = b.querySelector('[data-start]'), timer = b.querySelector('.timer'), form = b.querySelector('[data-form]'), after = b.querySelector('[data-after]');
       let r = 0, t0 = 0, iv = 0;
@@ -577,7 +666,7 @@
     }
   });
 
-  // 12. Réduire la charge cognitive : désencombrer.
+  // 14. Réduire la charge cognitive : désencombrer.
   const CLUTTER = [
     ['bg', 'Fond gris'], ['grid', 'Quadrillage épais'], ['shadow', 'Ombre « 3D »'], ['markers', 'Un marqueur par point'],
     ['legend', 'Légende inutile'], ['rot', 'Dates inclinées'], ['border', 'Cadre']
@@ -616,38 +705,71 @@
   }
   steps.push({
     id: 'charge', kicker: 'Charge cognitive', title: 'Retirez tout ce qui ne sert pas',
-    lead: 'Chaque élément demande un effort au cerveau. Cliquez sur les éléments à <b>supprimer</b>.',
+    lead: 'Faites défiler : chaque paragraphe retire un élément qui demande un effort au cerveau.',
     build(b) {
-      const on = {}; CLUTTER.forEach(c => { on[c[0]] = true; });
-      b.innerHTML = '<div class="viz"><div data-chart></div><div class="meter" aria-hidden="true"><i></i></div><div class="small" data-meter></div>' +
-        '<div class="viz-caption">Google Trends, recherches « Bac » en Mauritanie, ' + D.trend.dates[0].slice(0, 4) + '–' + D.trend.dates[D.trend.dates.length - 1].slice(0, 4) + '.</div></div>' +
-        '<div class="clutter-list">' + CLUTTER.map(c => '<button class="chip" data-k="' + c[0] + '">✕ ' + c[1] + '</button>').join('') + '</div>' +
-        '<div class="row" style="margin-top:12px"><button class="btn btn-primary" data-story disabled>Ajouter le message</button></div><div data-after></div>';
-      const draw = story => {
-        b.querySelector('[data-chart]').innerHTML = trendChart(on, story);
-        const left = Object.values(on).filter(Boolean).length;
-        const bar = b.querySelector('.meter > i');
-        bar.style.width = (12 + left / CLUTTER.length * 88) + '%';
-        bar.style.background = left > 3 ? BAD : left ? '#b07d2a' : GOOD;
-        b.querySelector('[data-meter]').textContent = left ? 'Charge cognitive : ' + left + ' élément' + (left > 1 ? 's' : '') + ' en trop' : 'Plus rien à retirer.';
-        b.querySelector('[data-story]').disabled = left > 0;
-      };
-      b.querySelectorAll('[data-k]').forEach(c => c.addEventListener('click', () => {
-        on[c.dataset.k] = !on[c.dataset.k];
-        c.setAttribute('aria-pressed', on[c.dataset.k] ? 'false' : 'true');
-        c.textContent = (on[c.dataset.k] ? '✕ ' : '↺ ') + CLUTTER.find(x => x[0] === c.dataset.k)[1];
-        b.querySelector('[data-after]').innerHTML = '';
-        draw(false);
-      }));
-      b.querySelector('[data-story]').addEventListener('click', () => {
-        draw(true);
-        b.querySelector('[data-after]').innerHTML = M.note('lion', '<p><b>« La perfection est atteinte non quand il n’y a plus rien à ajouter, mais quand il n’y a plus rien à retirer. »</b> Puis une couleur, une seule, pour le message : le pic tombe en juillet 17 années sur 19. Les exceptions (2020, 2021) racontent elles aussi une histoire.</p>');
+      const all = CLUTTER.map(c => c[0]);
+      const off = [[], ['bg', 'border'], ['bg', 'border', 'shadow'], ['bg', 'border', 'shadow', 'grid'], ['bg', 'border', 'shadow', 'grid', 'markers'], all, all];
+      K.scrolly(b, {
+        steps: [
+          '<p>Le graphique tel qu’on le reçoit souvent : Google Trends, recherches « Bac » en Mauritanie.</p><span class="sc-ask">Que peut-on supprimer ?</span>',
+          '<p>Le <b>fond gris</b> et le <b>cadre</b> : ils n’apportent aucune information.</p>',
+          '<p>L’<b>ombre « 3D »</b> : elle dédouble la courbe.</p>',
+          '<p>Le <b>quadrillage épais</b> devient discret : il guide sans crier.</p>',
+          '<p><b>Un marqueur par point</b> : 250 ronds orange qui cachent la courbe.</p>',
+          '<p>La <b>légende</b> (une seule série !) et les <b>dates inclinées</b>.</p><p>« La perfection est atteinte non quand il n’y a plus rien à ajouter, mais quand il n’y a plus rien à retirer. »</p>',
+          '<p>Puis <b>une couleur, une seule</b>, pour le message : le pic de chaque année tombe en juillet, 17 années sur 19. Les exceptions (2020, 2021) racontent elles aussi une histoire.</p>'
+        ],
+        render(el, i) {
+          const on = {}; all.forEach(k => { on[k] = !off[i].includes(k); });
+          const left = all.length - off[i].length;
+          el.innerHTML = trendChart(on, i === 6) + '<p class="small" style="margin:8px 0 0">' + (left ? 'Éléments superflus restants : <b>' + left + '</b>' : 'Plus rien à retirer.') + '</p>' +
+            '<div class="viz-caption">Google Trends, recherches « Bac » en Mauritanie, ' + D.trend.dates[0].slice(0, 4) + '–' + D.trend.dates[D.trend.dates.length - 1].slice(0, 4) + '.</div>';
+        }
       });
-      draw(false);
     }
   });
 
-  // 13. Connaître son audience.
+  // 15. Gestalt : légende ou étiquettes directes ?
+  function serieChart(st) {
+    const W = 680, H = 330, l = 54, r = st.prox ? 190 : 20, t = 24, bt = st.prox ? 34 : 74;
+    const x = scale(2015, 2025, l, W - r), y = scale(0, 45, H - bt, t);
+    const cols = {SN: '#4e79a7', M: '#59a14f', LM: '#e15759', LO: '#b07aa1'};
+    const names = {SN: 'Sciences nat. (SN)', M: 'Maths (M)', LM: 'Lettres mod. (LM)', LO: 'Lettres orig. (LO)'};
+    let s = yAxis(y, [0, 15, 30, 45], l, W - r, v => v + ' %');
+    [2015, 2020, 2025].forEach(yy => { s += '<text x="' + x(yy) + '" y="' + (H - bt + 20) + '" text-anchor="middle">' + yy + '</text>'; });
+    Object.keys(cols).forEach(k => {
+      const c = st.sim ? (k === 'LM' ? ACC : GREY2) : cols[k];
+      const pts = bac.years.map((yy, i) => [x(yy), y(bac.serie[k][i])]);
+      s += '<path d="' + path(pts) + '" fill="none" stroke="' + c + '" stroke-width="' + (st.sim && k === 'LM' ? 3.2 : 2.2) + '"/>';
+      if (st.prox) {
+        const last = pts[pts.length - 1];
+        s += '<text x="' + (last[0] + 8) + '" y="' + (last[1] + 5) + '" style="font-size:13px;font-weight:700;fill:' + (st.sim && k !== 'LM' ? '#8a8f99' : c) + '">' + names[k] + '</text>';
+      }
+    });
+    if (!st.prox) {
+      const keys = Object.keys(cols);
+      s += '<rect x="' + l + '" y="' + (H - 30) + '" width="' + (W - l - 20) + '" height="26" fill="none" stroke="#d1d5db"/>';
+      keys.forEach((k, i) => { s += '<line x1="' + (l + 14 + i * 150) + '" x2="' + (l + 34 + i * 150) + '" y1="' + (H - 17) + '" y2="' + (H - 17) + '" stroke="' + (st.sim ? (k === 'LM' ? ACC : GREY2) : cols[k]) + '" stroke-width="3"/><text x="' + (l + 40 + i * 150) + '" y="' + (H - 12) + '" style="font-size:12px">' + names[k] + '</text>'; });
+    }
+    return svg(W, H, s);
+  }
+  steps.push({
+    id: 'gestalt', kicker: 'Gestalt', title: 'Légende ou étiquettes ?',
+    lead: 'Faites défiler : deux principes de la Gestalt, appliqués au même graphique.',
+    build(b) {
+      const states = [{prox: false, sim: false}, {prox: true, sim: false}, {prox: true, sim: true}];
+      K.scrolly(b, {
+        steps: [
+          '<p>Taux d’admission au bac par série, avec une légende en bas.</p><span class="sc-ask">Quelle série a le taux le plus bas en 2025 ? Combien d’allers-retours vers la légende ?</span>',
+          '<p><mark>Proximité</mark> : ce qui est proche est perçu comme lié. L’étiquette se place au bout de sa ligne ; la légende disparaît.</p>',
+          '<p><mark>Similarité</mark> : ce qui se ressemble forme un groupe. Le gris pour le contexte, une couleur pour le message : <b>Lettres modernes, 10,4 %</b>.</p>'
+        ],
+        render(el, i) { el.innerHTML = serieChart(states[i]) + '<div class="viz-caption">Taux d’admission au bac par série. ' + SRC_BAC + '</div>'; }
+      });
+    }
+  });
+
+  // 16. Connaître son audience.
   steps.push({
     id: 'audience', kicker: 'Audience', title: 'À qui parlez-vous ?',
     lead: 'Deux diapositives, deux publics. Qui reçoit laquelle ?',
@@ -672,10 +794,53 @@
     }
   });
 
-  // 14. À retenir.
+  // 17. Même chiffre, deux unes : l'éthique du récit.
+  function uneChart(kind, zero) {
+    const W = 340, H = 220, l = 40, r = 12, t = 14, bt = 26;
+    let s = '';
+    if (kind === 'A') {
+      const yrs = [2023, 2024, 2025], lo = zero ? 0 : 14, hi = 23;
+      const y = scale(lo, hi, H - bt, t), bw = 56, x = i => l + 34 + i * 90;
+      s += yAxis(y, zero ? [0, 5, 10, 15, 20] : [14, 16, 18, 20, 22], l, W - r, v => v + ' %');
+      yrs.forEach((yy, i) => {
+        const v = at(yy);
+        s += '<rect x="' + x(i) + '" y="' + y(v) + '" width="' + bw + '" height="' + (y(lo) - y(v)) + '" fill="' + (yy === 2025 ? BAD : GREY2) + '"/>' +
+          '<text x="' + (x(i) + bw / 2) + '" y="' + (y(v) - 6) + '" text-anchor="middle" class="lbl-strong">' + fr(v, 1) + '</text>' +
+          '<text x="' + (x(i) + bw / 2) + '" y="' + (H - 8) + '" text-anchor="middle">' + yy + '</text>';
+      });
+    } else {
+      const x = scale(2015, 2025, l, W - r - 10), y = scale(0, 25, H - bt, t);
+      s += yAxis(y, [0, 10, 20], l, W - r, v => v + ' %');
+      s += '<path d="' + path(bac.years.map((yy, i) => [x(yy), y(bac.taux[i])])) + '" fill="none" stroke="' + GREY + '" stroke-width="2"/>';
+      s += '<circle cx="' + x(2025) + '" cy="' + y(at(2025)) + '" r="5" fill="' + GOOD + '"/><text x="' + (x(2025) - 8) + '" y="' + (y(at(2025)) + 20) + '" text-anchor="end" style="fill:' + GOOD + ';font-weight:700">18,8 %</text>';
+      [2015, 2025].forEach(yy => { s += '<text x="' + x(yy) + '" y="' + (H - 8) + '" text-anchor="middle">' + yy + '</text>'; });
+    }
+    return svg(W, H, s);
+  }
   steps.push({
-    id: 'retenir', kicker: 'À retenir', title: 'Ce que vous emportez',
-    lead: 'Six idées, une par activité.',
+    id: 'deux-unes', kicker: 'Éthique', title: 'Même chiffre, deux unes',
+    lead: 'Bac 2025 : 18,8 % d’admis. Faites défiler : deux journaux, deux titres.',
+    build(b) {
+      const une = (k, title, zero, hidden) => '<div class="une"' + (hidden ? ' style="opacity:.25"' : '') + '><div class="une-mast">' + (k === 'A' ? 'LE QUOTIDIEN' : 'L’HEBDO') + '</div><h4>' + (hidden ? '…' : title) + '</h4>' + (hidden ? '<div style="height:150px"></div>' : uneChart(k, zero)) + '</div>';
+      K.scrolly(b, {
+        steps: [
+          '<p>Le journal A titre : <b>« Le bac s’effondre en 2025 »</b>.</p>',
+          '<p>La même semaine, le journal B : <b>« 2025 : deuxième meilleur taux depuis 2015 »</b>.</p><span class="sc-ask">Lequel ment ?</span>',
+          '<p>Regardez l’axe du journal A : il commence à <b>14 %</b>. Remettons-le à zéro.</p>',
+          '<p><b>Aucun ne ment.</b> Recul de 3,3 points <i>et</i> deuxième meilleur taux en 11 ans.</p><p>C’est le choix de la <mark>période</mark> et de l’<mark>axe</mark> qui fabrique l’histoire.</p>'
+        ],
+        render(el, i) {
+          el.innerHTML = '<div class="unes">' + une('A', 'Le bac s’effondre en 2025', i >= 2) + une('B', '2025 : deuxième meilleur taux depuis 2015', false, i === 0) + '</div><div class="viz-caption">' + SRC_BAC + '</div>';
+        }
+      });
+      b.insertAdjacentHTML('beforeend', M.note('ghost', '<p><b>Le pouvoir du conteur.</b> Les données ne mentent pas ; le cadrage choisit. Choisissez la période et l’axe pour <mark>éclairer</mark>, pas pour impressionner. Suite au CM 2 : le « facteur de mensonge ».</p>'));
+    }
+  });
+
+  // 18. À retenir.
+  steps.push({
+    id: 'retenir', kicker: 'À retenir', title: 'Ce que vous emportez', next: 'Il reste du temps ? Ouvrir la réserve',
+    lead: 'Sept idées à garder.',
     build(b) {
       b.innerHTML = '<ol class="recap">' + [
         'Il faut les <b>trois piliers</b> : données, visualisation, narration.',
@@ -683,10 +848,151 @@
         '<b>Une question, un graphique.</b> La lisibilité passe avant la beauté.',
         'Commencez par l’essentiel (<b>pyramide inversée</b>), ancrez le chiffre dans l’humain (<b>madeleine</b>).',
         'Couleur, taille, position guident l’œil ; <b>retirez</b> ce qui ne sert pas le message.',
-        'Adaptez-vous au <b>public</b> : l’exécutif veut le « so what ? », l’analyste la méthode.'
+        'Adaptez-vous au <b>public</b> : l’exécutif veut le « so what ? », l’analyste la méthode.',
+        'Mêmes données, plusieurs histoires : choisissez la <b>période</b> et l’<b>axe</b> pour éclairer, pas pour impressionner.'
       ].map(x => '<li><span>' + x + '</span></li>').join('') + '</ol>' +
-        M.note('dog', '<p><b>Prochaine séance : TD 1.</b> Le même graphique en Matplotlib, Seaborn et Altair. Venez avec Python et un notebook qui fonctionne.</p>') +
-        '<details class="details"><summary>Pour aller plus loin</summary><p>Les exemples d’origine du cours (piscines allemandes 1956–1959, mots japonais les plus traduits, carte du choléra de John Snow) sont dans le support PDF de 2025–2026.</p></details>';
+        M.note('dog', '<p><b>Prochaine séance : TD 1.</b> Le même graphique en Matplotlib, Seaborn et Altair. Venez avec Python et un notebook qui fonctionne.</p>');
+    }
+  });
+
+  /* ---------- Réserve : à utiliser s'il reste du temps ---------- */
+
+  // R1. Trouvez l'histoire : carte de chaleur wilayas × années, en défilement.
+  function heat(focus) {
+    const WY = bac.wilayaYears, years = bac.years, i25 = years.indexOf(2025);
+    const rows = Object.keys(WY).sort((a, c) => WY[c][i25] - WY[a][i25]);
+    const W = 680, l = 168, top = 26, cw = (W - l) / years.length, rh = 23, H = top + rows.length * rh + 4;
+    const col = v => { const t = Math.min(1, v / 30); return 'rgb(' + Math.round(255 - t * (255 - 138)) + ',' + Math.round(255 - t * (255 - 79)) + ',' + Math.round(255 - t * (255 - 140)) + ')'; };
+    let s = years.map((y, j) => '<text x="' + (l + cw * j + cw / 2) + '" y="16" text-anchor="middle"' + (focus.col === j ? ' class="lbl-accent"' : '') + '>' + String(y).slice(2) + '</text>').join('');
+    rows.forEach((w, r) => {
+      const y = top + r * rh;
+      s += '<text x="' + (l - 8) + '" y="' + (y + 16) + '" text-anchor="end"' + (focus.row === w ? ' class="lbl-accent"' : '') + '>' + esc(w) + '</text>';
+      years.forEach((yy, j) => {
+        const v = WY[w][j], on = focus.cells ? focus.cells.some(c => c[0] === w && c[1] === j) : (focus.col == null || focus.col === j) && (focus.row == null || focus.row === w);
+        const x = l + cw * j;
+        s += '<g opacity="' + (on ? 1 : .22) + '"><rect x="' + (x + 1) + '" y="' + (y + 1) + '" width="' + (cw - 2) + '" height="' + (rh - 2) + '" fill="' + (v == null ? '#fff' : col(v)) + '" stroke="' + (v == null ? BAD : 'none') + '" stroke-dasharray="3 2"/>' +
+          (v == null ? '' : '<text x="' + (x + cw / 2) + '" y="' + (y + 16) + '" text-anchor="middle" style="font-size:11px;fill:' + (v > 17 ? '#fff' : INK) + '">' + fr(v, 0) + '</text>') + '</g>';
+      });
+    });
+    return svg(W, H, s, 'heat');
+  }
+  steps.push({
+    id: 'histoire', kicker: 'Réserve', title: 'Trouvez l’histoire',
+    lead: 'Taux d’admission (%) par wilaya et par année, du plus haut au plus bas en 2025. Où est l’histoire ?',
+    build(b) {
+      const WY = bac.wilayaYears, yrs = bac.years, j = y => yrs.indexOf(y), names = Object.keys(WY);
+      const lowest = yrs.map((y, k) => names.filter(w => WY[w][k] != null).sort((a, c) => WY[a][k] - WY[c][k])[0]);
+      const guidi = lowest.map((w, k) => w === 'Guidimagha' ? k : -1).filter(k => k >= 0);
+      const known = yrs.filter((y, k) => names.some(w => WY[w][k] != null)).length;
+      const min24 = Math.min(...names.map(w => WY[w][j(2024)]));
+      const stories = [
+        {focus: {}, html: '<p>Laissez la classe chercher d’abord.</p><span class="sc-ask">Quelle case, quelle ligne, quelle colonne vous arrête ?</span>'},
+        {focus: {col: j(2020)}, html: '<p><b>Une colonne vide</b> : en 2020, aucune wilaya n’est renseignée dans le fichier.</p><span class="sc-ask">Qui manque ? Pourquoi ?</span>'},
+        {focus: {cells: [['Hodh Chargui', j(2018)], ['Hodh Chargui', j(2019)], ['Inchiri', j(2018)], ['Inchiri', j(2019)]]}, html: '<p><b>2018, un pic isolé</b> : Hodh Chargui ' + fr(WY['Hodh Chargui'][j(2018)], 1) + ' %, Inchiri ' + fr(WY['Inchiri'][j(2018)], 1) + ' %… puis ' + fr(WY['Hodh Chargui'][j(2019)], 1) + ' % et ' + fr(WY['Inchiri'][j(2019)], 1) + ' % en 2019.</p>'},
+        {focus: {row: 'Nouakchott Nord'}, html: '<p><b>Nouakchott Nord</b> : de ' + fr(WY['Nouakchott Nord'][0], 1) + ' % en 2015 à ' + fr(WY['Nouakchott Nord'][j(2024)], 1) + ' % en 2024, une montée régulière.</p>'},
+        {focus: {cells: guidi.map(k => ['Guidimagha', k])}, html: '<p><b>Guidimagha</b> : la wilaya la plus basse ' + guidi.length + ' années sur ' + known + '.</p>'},
+        {focus: {col: j(2024)}, html: '<p><b>2024</b> : toutes les wilayas dépassent ' + fr(Math.floor(min24), 0) + ' %. Une année record partout.</p><p>Explorer pour trouver les perles ; <mark>expliquer pour les montrer</mark>. On en reparle au CM 2.</p>'}
+      ];
+      K.scrolly(b, {
+        steps: stories.map(x => x.html),
+        render(el, i) { el.innerHTML = heat(stories[i].focus) + '<div class="viz-caption">' + SRC_BAC + '</div>'; }
+      });
+    }
+  });
+
+  // R2. Pourquoi le taux a-t-il triplé ? Ce que les données disent… et ne disent pas.
+  steps.push({
+    id: 'pourquoi', kicker: 'Réserve', title: 'Pourquoi le taux a-t-il triplé ?',
+    lead: 'Toutes les séries progressent entre 2015 et 2025. Les données expliquent-elles pourquoi ?',
+    build(b) {
+      const i15 = 0, i25 = bac.years.indexOf(2025);
+      const rows = [['Ensemble', bac.taux[i15], bac.taux[i25], bac.candidats[i15], bac.candidats[i25]]].concat(
+        ['SN', 'M', 'LM', 'LO'].map(k => [k, bac.serie[k][i15], bac.serie[k][i25], bac.candSerie[k][i15], bac.candSerie[k][i25]]));
+      const W = 680, l = 110, r = 150, t = 30, rh = 44, H = t + rows.length * rh;
+      const x = scale(0, 45, l, W - r);
+      let s = '<text x="' + l + '" y="16" style="font-weight:700;fill:' + GREY + '">● 2015</text><text x="' + (l + 70) + '" y="16" class="lbl-accent">● 2025</text><text x="' + (W - 4) + '" y="16" text-anchor="end">candidats 2015 → 2025</text>';
+      rows.forEach((rw, k) => {
+        const y = t + k * rh + 18;
+        s += '<text x="' + (l - 10) + '" y="' + (y + 5) + '" text-anchor="end" class="lbl-strong">' + rw[0] + '</text>' +
+          '<line x1="' + x(rw[1]) + '" x2="' + x(rw[2]) + '" y1="' + y + '" y2="' + y + '" stroke="' + GREY2 + '" stroke-width="4"/>' +
+          '<circle cx="' + x(rw[1]) + '" cy="' + y + '" r="7" fill="' + GREY + '"/><circle cx="' + x(rw[2]) + '" cy="' + y + '" r="7" fill="' + ACC + '"/>' +
+          '<text x="' + (x(rw[2]) + 12) + '" y="' + (y + 5) + '" class="lbl-accent">' + fr(rw[2], 1) + ' %</text>' +
+          '<text x="' + (W - 4) + '" y="' + (y + 5) + '" text-anchor="end">' + fr(rw[3]) + ' → ' + fr(rw[4]) + '</text>';
+      });
+      b.innerHTML = '<div class="viz main">' + svg(W, H, s) + '<div class="viz-caption">Taux d’admission par série, 2015 et 2025, et nombre de candidats. ' + SRC_BAC + '</div></div><div data-q></div>';
+      question(b.querySelector('[data-q]'), {
+        prompt: 'Ces données prouvent-elles que les élèves sont meilleurs qu’en 2015 ?',
+        options: [
+          {t: 'Oui : toutes les séries progressent', why: 'Elles progressent, oui. Mais un examen plus facile ou une notation plus large donneraient exactement le même graphique.'},
+          {t: 'Oui : la série M dépasse 40 %', why: 'La série M a aussi deux fois moins de candidats (2 806 → 1 550) : elle est peut-être plus sélective. Ce n’est pas une preuve.'},
+          {t: 'Non : elles montrent ce qui a changé, pas pourquoi', ok: true, why: 'Élèves mieux préparés ? Examen plus facile ? Notation ? Choix des séries ? Les données ne tranchent pas. Un récit honnête <b>le dit</b>.'}
+        ]
+      });
+    }
+  });
+
+  // R3. Duel de prénoms : la classe vote, on révèle.
+  steps.push({
+    id: 'duel', kicker: 'Réserve', title: 'Duel de prénoms',
+    lead: 'Dans le fichier des 132 015 prénoms, lequel est le plus fréquent ? La classe vote, on révèle.',
+    build(b) {
+      const N = D.prenoms.duel, pairs = [['Fatima', 'Mariem'], ['Aicha', 'Khadija'], ['Zeineb', 'Amina'], ['Cheikh', 'Brahim'], ['Sidi Mohamed', 'Mohamed lemine'], ['Ahmed', 'Mohamed']];
+      let k = 0, score = 0;
+      b.innerHTML = '<div class="viz main" data-duel></div>';
+      const box = b.querySelector('[data-duel]');
+      const show = () => {
+        const [a, c] = pairs[k];
+        box.innerHTML = '<p class="small" style="margin:0 0 10px">Duel ' + (k + 1) + ' / ' + pairs.length + ' · score de la classe : ' + score + '</p>' +
+          '<div class="slides-2">' + [a, c].map(n => '<button class="pyr-card" data-n="' + esc(n) + '" style="font:700 26px/1.2 Bitter;text-align:center;padding:22px">' + esc(n) + '</button>').join('') + '</div><div data-res></div>';
+        box.querySelectorAll('[data-n]').forEach(btn => btn.addEventListener('click', () => {
+          const win = N[a] >= N[c] ? a : c, ok = btn.dataset.n === win;
+          if (ok) score++;
+          box.querySelectorAll('[data-n]').forEach(x => { x.disabled = true; x.style.opacity = 1; x.style.borderColor = x.dataset.n === win ? GOOD : '#d1d5db'; x.style.background = x.dataset.n === win ? '#e3efe8' : '#fff'; });
+          const mx = Math.max(N[a], N[c]);
+          const bars = [a, c].map(n => '<div style="display:flex;align-items:center;gap:10px;margin:6px 0"><span style="width:150px;text-align:right;font-weight:700">' + esc(n) + '</span><span style="height:22px;width:' + (60 * N[n] / mx) + '%;background:' + (n === win ? ACC : GREY2) + '"></span><span>' + fr(N[n]) + '</span></div>').join('');
+          const last = k === pairs.length - 1;
+          box.querySelector('[data-res]').innerHTML = '<div style="margin-top:12px">' + bars + '</div>' +
+            (last ? M.note('ghost', '<p><b>Mohamed, si rare ?</b> Seulement ' + fr(N.Mohamed) + ' « Mohamed » seuls… mais <b>' + fr(D.prenoms.contientMohamed) + '</b> prénoms contiennent « Mohamed » (Sidi Mohamed, Mohamed Lemine…). <mark>La définition change l’histoire.</mark></p>') +
+              '<p class="small">Score final de la classe : <b>' + score + ' / ' + pairs.length + '</b>.</p>'
+              : '<div class="row" style="margin-top:10px"><button class="btn btn-primary" data-next>Duel suivant</button></div>');
+          if (ok) K.confetti(box);
+          const nx = box.querySelector('[data-next]');
+          if (nx) nx.addEventListener('click', () => { k++; show(); });
+        }));
+      };
+      show();
+    }
+  });
+
+  // R4. Quiz éclair : une question à la fois.
+  const QUIZ = [
+    {prompt: 'Wald, 1943 : où faut-il blinder les avions ?', options: [{t: 'Là où il y a le plus d’impacts'}, {t: 'Là où il n’y a pas d’impacts', ok: true, why: 'Les avions touchés là ne sont pas revenus.'}, {t: 'Partout un peu'}]},
+    {prompt: 'Une visualisation sans données, c’est…', options: [{t: 'Une opinion'}, {t: 'Une coquille vide', ok: true, why: 'Et une histoire sans données, une opinion.'}, {t: 'Un tableau de bord'}]},
+    {prompt: 'Le style de narration le plus adapté pour présenter des résultats ?', options: [{t: 'Littéraire'}, {t: 'Numérique'}, {t: 'Journalistique', ok: true, why: 'Le message d’abord : le « lead ».'}]},
+    {prompt: 'L’attribut pré-attentif le plus fort ?', options: [{t: 'La couleur', ok: true, why: 'À utiliser pour attirer l’œil sur l’essentiel, et seulement lui.'}, {t: 'La police'}, {t: 'La légende'}]},
+    {prompt: 'Lequel retient-on le mieux ?', options: [{t: '« 9,8 % d’admis »'}, {t: '« 3 élèves sur 30 »', ok: true, why: 'Un pourcentage traduit en personnes devient concret.'}]},
+    {prompt: 'Un diagramme en barres dont l’axe commence à 14 %…', options: [{t: 'Est plus précis'}, {t: 'Exagère les différences', ok: true, why: '« If zero is not the start, the truth falls apart. »'}, {t: 'Ne change rien'}]}
+  ];
+  steps.push({
+    id: 'quiz', kicker: 'Réserve', title: 'Quiz éclair',
+    lead: 'Six questions, réponses à voix haute.',
+    build(b) {
+      let k = 0, good = 0;
+      const next = () => {
+        const host = document.createElement('div'); b.appendChild(host);
+        const q = QUIZ[k];
+        question(host, Object.assign({}, q, {
+          prompt: (k + 1) + ' / ' + QUIZ.length + ' · ' + q.prompt,
+          onAnswer(ok) { if (ok) good++; },
+          onSolved() {
+            k++;
+            const more = document.createElement('div'); more.className = 'row'; host.appendChild(more);
+            if (k < QUIZ.length) { more.innerHTML = '<button class="btn btn-primary">Question suivante</button>'; more.firstChild.addEventListener('click', () => { more.remove(); next(); }); }
+            else more.innerHTML = '<p class="small"><b>' + good + ' / ' + QUIZ.length + '</b> du premier coup. Bravo !</p>';
+          }
+        }));
+      };
+      next();
     }
   });
 
@@ -694,8 +1000,13 @@
   window.DS_LESSONS.cm1 = {
     id: 'cm1',
     title: 'Principes du data storytelling',
-    lede: 'Pourquoi un même chiffre peut passer inaperçu ou marquer les esprits. Quatorze activités courtes, sur des données mauritaniennes réelles.',
+    lede: 'Pourquoi un même chiffre peut passer inaperçu ou marquer les esprits. Dix-huit activités courtes, plus une réserve, sur des données mauritaniennes réelles.',
     minutes: 90,
+    // Minutes prévues par étape en classe (affichées en mode Présenter).
+    plan: {ouverture: 5, 'john-snow': 7, piliers: 5, avions: 6, 'qui-manque': 4, nouakchott: 4, complexite: 5, forme: 5, narration: 6,
+      pyramide: 4, madeleine: 5, classe: 5, preattentif: 4, charge: 5, gestalt: 5, audience: 4, 'deux-unes': 6, retenir: 3},
+    // Réserve (hors des 90 min), à piocher s'il reste du temps.
+    reserve: {histoire: 8, pourquoi: 6, duel: 6, quiz: 6},
     steps
   };
 })();

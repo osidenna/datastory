@@ -86,5 +86,30 @@
     return {box, reveal: () => !solved && finish(false, -1, true), get solved() { return solved; }};
   }
 
-  window.Kit = {esc, fr, pct, scale, el, svg, path, yAxis, confetti, question, css, MOIS, MOIS_LONG, NS};
+
+  /* Scrollytelling : le graphique reste épinglé, chaque paragraphe qui passe au centre de l'écran
+     change son état. render(el, i) dessine l'état i. Un clic sur un paragraphe l'active aussi. */
+  function scrolly(host, opts) {
+    const box = el('<div class="scrolly"><div class="sc-graphic"><div class="sc-chart"></div></div><div class="sc-steps">' +
+      opts.steps.map((s, i) => '<div class="sc-step" data-i="' + i + '"><div class="sc-card">' + s + '</div></div>').join('') + '</div></div>');
+    host.appendChild(box);
+    const chart = box.querySelector('.sc-chart'), items = [...box.querySelectorAll('.sc-step')];
+    let cur = -1;
+    const go = i => {
+      if (i === cur) return;
+      cur = i;
+      items.forEach(s => s.classList.toggle('is-active', +s.dataset.i === i));
+      opts.render(chart, i);
+      opts.onStep && opts.onStep(i);
+    };
+    go(0);
+    if ('IntersectionObserver' in window) {
+      const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) go(+e.target.dataset.i); }), {rootMargin: '-40% 0px -55% 0px'});
+      items.forEach(s => io.observe(s));
+    }
+    items.forEach(s => s.addEventListener('click', () => go(+s.dataset.i)));
+    return {go, chart, box};
+  }
+
+  window.Kit = {scrolly, esc, fr, pct, scale, el, svg, path, yAxis, confetti, question, css, MOIS, MOIS_LONG, NS};
 })();
