@@ -35,7 +35,7 @@
     try { unlocked = Math.max(1, Math.min(les.steps.length, +localStorage.getItem(key) || 1)); } catch (e) { /* stockage indisponible */ }
     app.innerHTML = '<main class="lesson"><header class="lesson-head"><div class="crumbs"><a href="#/">Le cours</a> / ' + ses.type + ' ' + ses.n + '</div>' +
       '<h1>' + les.title + '</h1><p class="lede">' + les.lede + '</p>' +
-      '<div class="lesson-tools"><button class="tool" data-present>▶ Présenter</button><button class="tool" data-all>Tout afficher</button><button class="tool" data-restart>Recommencer</button><span class="small" style="align-self:center">' + (les.plan ? Object.keys(les.plan).length : les.steps.length) + ' activités · ' + les.minutes + ' min' + (les.reserve ? ' · + réserve' : '') + '</span></div></header>' +
+      '<div class="lesson-tools"><button class="tool" data-present>▶ Présenter</button><button class="tool" data-all>Tout afficher</button><button class="tool" data-restart>Recommencer</button><span class="small" style="align-self:center">' + les.steps.length + ' activités</span></div></header>' +
       '<div data-steps></div></main><div class="present-bar"><button data-prev aria-label="Étape précédente">←</button><span data-pos></span><button data-next aria-label="Étape suivante">→</button><button data-exit>Quitter</button></div>';
     const host = app.querySelector('[data-steps]');
     const nodes = [];
@@ -48,11 +48,11 @@
       if (PROF && les.plan) {
         const before = les.steps.slice(0, i).reduce((acc, x) => acc + (les.plan[x.id] || 0), 0), m = les.plan[st.id];
         cue = m ? '<span class="prof-cue">≈ ' + m + ' min · ' + before + '→' + (before + m) + ' min</span>'
-          : (les.reserve && les.reserve[st.id] ? '<span class="prof-cue">réserve · ≈ ' + les.reserve[st.id] + ' min</span>' : '');
+          : (les.reserve && les.reserve[st.id] ? '<span class="prof-cue">≈ ' + les.reserve[st.id] + ' min · en plus</span>' : '');
       }
       sec.innerHTML = '<div class="step-kicker"><span class="n">' + (i + 1) + ' / ' + les.steps.length + '</span><span>' + st.kicker + '</span>' + cue + '</div>' +
         '<h2>' + st.title + '</h2><p class="step-lead">' + st.lead + '</p><div class="step-body"></div>' +
-        (i < les.steps.length - 1 ? '<div class="continue"><button class="btn btn-primary">' + (st.next || 'Continuer') + '</button></div>' : '<p class="done-note">Fin du CM. Bravo !</p>');
+        (i < les.steps.length - 1 ? '<div class="continue"><button class="btn btn-primary">' + (st.next || 'Continuer') + '</button></div>' : '<p class="done-note">Fin du CM.</p>');
       host.appendChild(sec);
       const body = sec.querySelector('.step-body');
       st.build(body);

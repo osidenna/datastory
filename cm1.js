@@ -839,7 +839,7 @@
 
   // 18. À retenir.
   steps.push({
-    id: 'retenir', kicker: 'À retenir', title: 'Ce que vous emportez', next: 'Il reste du temps ? Ouvrir la réserve',
+    id: 'retenir', kicker: 'À retenir', title: 'Ce que vous emportez',
     lead: 'Sept idées à garder.',
     build(b) {
       b.innerHTML = '<ol class="recap">' + [
@@ -877,7 +877,7 @@
     return svg(W, H, s, 'heat');
   }
   steps.push({
-    id: 'histoire', kicker: 'Réserve', title: 'Trouvez l’histoire',
+    id: 'histoire', kicker: 'Explorer', title: 'Trouvez l’histoire',
     lead: 'Taux d’admission (%) par wilaya et par année, du plus haut au plus bas en 2025. Où est l’histoire ?',
     build(b) {
       const WY = bac.wilayaYears, yrs = bac.years, j = y => yrs.indexOf(y), names = Object.keys(WY);
@@ -902,7 +902,7 @@
 
   // R2. Pourquoi le taux a-t-il triplé ? Ce que les données disent… et ne disent pas.
   steps.push({
-    id: 'pourquoi', kicker: 'Réserve', title: 'Pourquoi le taux a-t-il triplé ?',
+    id: 'pourquoi', kicker: 'Interpréter', title: 'Pourquoi le taux a-t-il triplé ?',
     lead: 'Toutes les séries progressent entre 2015 et 2025. Les données expliquent-elles pourquoi ?',
     build(b) {
       const i15 = 0, i25 = bac.years.indexOf(2025);
@@ -933,7 +933,7 @@
 
   // R3. Duel de prénoms : la classe vote, on révèle.
   steps.push({
-    id: 'duel', kicker: 'Réserve', title: 'Duel de prénoms',
+    id: 'duel', kicker: 'Jeu', title: 'Duel de prénoms',
     lead: 'Dans le fichier des 132 015 prénoms, lequel est le plus fréquent ? La classe vote, on révèle.',
     build(b) {
       const N = D.prenoms.duel, pairs = [['Fatima', 'Mariem'], ['Aicha', 'Khadija'], ['Zeineb', 'Amina'], ['Cheikh', 'Brahim'], ['Sidi Mohamed', 'Mohamed lemine'], ['Ahmed', 'Mohamed']];
@@ -974,7 +974,7 @@
     {prompt: 'Un diagramme en barres dont l’axe commence à 14 %…', options: [{t: 'Est plus précis'}, {t: 'Exagère les différences', ok: true, why: '« If zero is not the start, the truth falls apart. »'}, {t: 'Ne change rien'}]}
   ];
   steps.push({
-    id: 'quiz', kicker: 'Réserve', title: 'Quiz éclair',
+    id: 'quiz', kicker: 'Quiz', title: 'Quiz éclair',
     lead: 'Six questions, réponses à voix haute.',
     build(b) {
       let k = 0, good = 0;
@@ -988,7 +988,7 @@
             k++;
             const more = document.createElement('div'); more.className = 'row'; host.appendChild(more);
             if (k < QUIZ.length) { more.innerHTML = '<button class="btn btn-primary">Question suivante</button>'; more.firstChild.addEventListener('click', () => { more.remove(); next(); }); }
-            else more.innerHTML = '<p class="small"><b>' + good + ' / ' + QUIZ.length + '</b> du premier coup. Bravo !</p>';
+            else more.innerHTML = '<p class="small"><b>' + good + ' / ' + QUIZ.length + '</b> du premier coup.</p>';
           }
         }));
       };
@@ -1000,7 +1000,7 @@
   window.DS_LESSONS.cm1 = {
     id: 'cm1',
     title: 'Principes du data storytelling',
-    lede: 'Pourquoi un même chiffre peut passer inaperçu ou marquer les esprits. Dix-huit activités courtes, plus une réserve, sur des données mauritaniennes réelles.',
+    lede: 'Pourquoi un même chiffre peut passer inaperçu ou marquer les esprits.',
     minutes: 90,
     // Minutes prévues par étape en classe (affichées en mode Présenter).
     plan: {ouverture: 5, 'john-snow': 7, piliers: 5, avions: 6, 'qui-manque': 4, nouakchott: 4, complexite: 5, forme: 5, narration: 6,
