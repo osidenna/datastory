@@ -111,5 +111,21 @@
     return {go, chart, box};
   }
 
-  window.Kit = {scrolly, esc, fr, pct, scale, el, svg, path, yAxis, confetti, question, css, MOIS, MOIS_LONG, NS};
+
+  // Téléphone : graphiques redessinés sur 400 unités (au lieu de 680) pour garder un texte lisible.
+  const narrow = () => typeof matchMedia !== 'undefined' && matchMedia('(max-width: 600px)').matches;
+  // Coupe un texte en lignes d'au plus max caractères (titres de graphiques sur téléphone).
+  function lines(str, max) {
+    const out = [''];
+    String(str).split(' ').forEach(w => {
+      const cur = out[out.length - 1], next = (cur + ' ' + w).trim();
+      if (next.length > max && cur) out.push(w); else out[out.length - 1] = next;
+    });
+    return out;
+  }
+  function tlines(x, y, str, max, attrs, lh) {
+    return lines(str, max).map((L, i) => '<text x="' + x + '" y="' + (y + i * lh) + '" ' + attrs + '>' + L + '</text>').join('');
+  }
+
+  window.Kit = {narrow, lines, tlines, scrolly, esc, fr, pct, scale, el, svg, path, yAxis, confetti, question, css, MOIS, MOIS_LONG, NS};
 })();

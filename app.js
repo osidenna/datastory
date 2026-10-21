@@ -26,6 +26,19 @@
     window.scrollTo(0, 0);
   }
 
+  function toc(les) {
+    if (!les.parts) return '';
+    return '<nav class="toc" aria-label="Parties"><ol>' + les.parts.map((p, k) => '<li><a href="#" data-part="' + k + '"><span>' + (k + 1) + '</span>' + p.title + '</a></li>').join('') + '</ol></nav>';
+  }
+  // Fin de séance : ce qui est donné par la leçon (travail, lectures…) + lien vers la séance suivante.
+  function foot(les, ses) {
+    const k = S.sessions.indexOf(ses), nx = S.sessions[k + 1], pv = S.sessions[k - 1];
+    const card = (s, dir) => !s ? '<span></span>' : (L[s.id] && s.status === 'ready'
+      ? '<a class="nav-card ' + dir + '" href="#/' + s.id + '"><small>' + (dir === 'next' ? 'Séance suivante →' : '← Séance précédente') + '</small><b>' + s.type + ' ' + s.n + ' · ' + s.title + '</b></a>'
+      : '<div class="nav-card ' + dir + ' soon"><small>' + (dir === 'next' ? 'Séance suivante' : 'Séance précédente') + ' · à venir</small><b>' + s.type + ' ' + s.n + ' · ' + s.title + '</b></div>');
+    return '<footer class="lesson-foot" hidden>' + (les.footer || '') + '<div class="nav-cards">' + card(pv, 'prev') + card(nx, 'next') + '</div></footer>';
+  }
+
   function lesson(id) {
     const les = L[id], ses = S.sessions.find(s => s.id === id);
     if (!les) return home();
@@ -34,15 +47,17 @@
     let unlocked = 1;
     try { unlocked = Math.max(1, Math.min(les.steps.length, +localStorage.getItem(key) || 1)); } catch (e) { /* stockage indisponible */ }
     app.innerHTML = '<main class="lesson"><header class="lesson-head"><div class="crumbs"><a href="#/">Le cours</a> / ' + ses.type + ' ' + ses.n + '</div>' +
-      '<h1>' + les.title + '</h1><p class="lede">' + les.lede + '</p>' +
-      '<div class="lesson-tools"><button class="tool" data-present>▶ Présenter</button><button class="tool" data-all>Tout afficher</button><button class="tool" data-restart>Recommencer</button><span class="small" style="align-self:center">' + les.steps.length + ' activités</span></div></header>' +
-      '<div data-steps></div></main><div class="present-bar"><button data-prev aria-label="Étape précédente">←</button><span data-pos></span><button data-next aria-label="Étape suivante">→</button><button data-exit>Quitter</button></div>';
+      '<h1>' + les.title + '</h1><p class="lede">' + les.lede + '</p>' + (les.model ? '<p class="model">' + les.model + '</p>' : '') +
+      '<div class="lesson-tools"><button class="tool" data-present>▶ Présenter</button><button class="tool" data-all>Tout afficher</button><button class="tool" data-restart>Recommencer</button><span class="small" style="align-self:center">' + les.steps.length + ' activités</span></div>' + toc(les) + '</header>' +
+      '<div data-steps></div>' + foot(les, ses) + '</main><div class="present-bar"><button data-prev aria-label="Étape précédente">←</button><span data-pos></span><button data-next aria-label="Étape suivante">→</button><button data-exit>Quitter</button></div>';
     const host = app.querySelector('[data-steps]');
     const nodes = [];
     const build = i => {
       const st = les.steps[i];
       const sec = document.createElement('section');
       sec.className = 'step'; sec.id = st.id;
+      const pk = (les.parts || []).findIndex(p => p.from === st.id);
+      if (pk >= 0) host.insertAdjacentHTML('beforeend', '<div class="part-head" id="partie-' + (pk + 1) + '"><span>Partie ' + (pk + 1) + '</span><h2>' + les.parts[pk].title + '</h2></div>');
       // Repère de temps réservé à l'enseignante : ouvrir le site avec ?prof (ex. …/datastory/?prof#/cm1).
       let cue = '';
       if (PROF && les.plan) {
@@ -52,7 +67,7 @@
       }
       sec.innerHTML = '<div class="step-kicker"><span class="n">' + (i + 1) + ' / ' + les.steps.length + '</span><span>' + st.kicker + '</span>' + cue + '</div>' +
         '<h2>' + st.title + '</h2><p class="step-lead">' + st.lead + '</p><div class="step-body"></div>' +
-        (i < les.steps.length - 1 ? '<div class="continue"><button class="btn btn-primary">' + (st.next || 'Continuer') + '</button></div>' : '<p class="done-note">Fin du CM.</p>');
+        (i < les.steps.length - 1 ? '<div class="continue"><button class="btn btn-primary">' + (st.next || 'Continuer') + '</button></div>' : '');
       host.appendChild(sec);
       const body = sec.querySelector('.step-body');
       st.build(body);
@@ -64,7 +79,9 @@
       return sec;
     };
     const save = () => { try { localStorage.setItem(key, unlocked); } catch (e) { /* rien */ } };
-    const progress = () => { bar.style.width = (100 * unlocked / les.steps.length) + '%'; };
+    const footEl = app.querySelector('.lesson-foot');
+    const endAt = les.endAt ? les.steps.findIndex(s => s.id === les.endAt) : les.steps.length - 1;
+    const progress = () => { bar.style.width = (100 * unlocked / les.steps.length) + '%'; if (footEl) footEl.hidden = unlocked < endAt + 1; };
     function reveal(i, scroll) {
       if (i >= les.steps.length) return;
       if (!nodes[i]) { const s = build(i); if (scroll) s.classList.add('is-new'); }
@@ -73,6 +90,12 @@
     }
     for (let i = 0; i < unlocked; i++) { build(i); if (i < unlocked - 1) { const c = nodes[i].querySelector('.continue'); if (c) c.hidden = true; } }
     progress();
+    app.querySelectorAll('[data-part]').forEach(a => a.addEventListener('click', e => {
+      e.preventDefault();
+      const p = les.parts[+a.dataset.part], idx = les.steps.findIndex(s => s.id === p.from);
+      for (let k = 0; k <= idx; k++) { reveal(k, false); if (k < idx) { const c = nodes[k].querySelector('.continue'); if (c) c.hidden = true; } }
+      document.getElementById('partie-' + (+a.dataset.part + 1)).scrollIntoView({behavior: 'smooth', block: 'start'});
+    }));
     app.querySelector('[data-all]').addEventListener('click', () => {
       for (let i = 0; i < les.steps.length; i++) { reveal(i, false); const c = nodes[i].querySelector('.continue'); if (c) c.hidden = true; }
     });

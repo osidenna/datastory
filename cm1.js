@@ -14,18 +14,20 @@
 
   /* ---------- Graphique du taux d'admission : quatre états (piliers) ---------- */
   function bacChart(st) {
-    const W = 680, H = 330, l = 46, r = 78, t = st.N ? 74 : 40, b = 36;
+    const N = K.narrow(), W = N ? 400 : 680, H = N ? 340 : 330, l = N ? 42 : 46, r = N ? 64 : 78, b = 36;
+    const TT = st.D ? 'Le taux d’admission au bac a presque triplé depuis 2015' : 'Le bac va de mieux en mieux !';
+    const tl = K.lines(TT, N ? 32 : 99), t = st.N ? 52 + tl.length * 22 : 40;
     const x = scale(2015, 2025, l, W - r), y = scale(0, 25, H - b, t);
     let s = '';
     if (st.N) {
-      s += '<text class="title" x="0" y="22">' + (st.D ? 'Le taux d’admission au bac a presque triplé depuis 2015' : 'Le bac va de mieux en mieux !') + '</text>';
-      s += '<text class="subtitle" x="0" y="44">' + (st.D ? 'Part des candidats déclarés admis, en %' : 'Croyez-nous sur parole.') + '</text>';
+      s += K.tlines(0, 22, TT, N ? 32 : 99, 'class="title"', 22);
+      s += '<text class="subtitle" x="0" y="' + (22 + tl.length * 22) + '">' + (st.D ? 'Part des candidats déclarés admis, en %' : 'Croyez-nous sur parole.') + '</text>';
     } else if (st.V) {
       s += '<text x="0" y="20" style="font-size:13px;fill:#6e7380">Taux d’admission par année</text>';
     }
     if (st.V) {
       s += yAxis(y, [0, 5, 10, 15, 20, 25], l, W - r, v => v + ' %');
-      s += bac.years.map(yr => '<text x="' + x(yr) + '" y="' + (H - b + 20) + '" text-anchor="middle">' + (st.N && yr % 5 && yr !== 2024 ? '' : yr) + '</text>').join('');
+      s += bac.years.map(yr => '<text x="' + x(yr) + '" y="' + (H - b + 20) + '" text-anchor="middle">' + ((N || st.N) && yr % 5 && (N || yr !== 2024) ? '' : yr) + '</text>').join('');
     }
     if (st.D && st.V) {
       const pts = bac.years.map((yr, i) => [x(yr), y(bac.taux[i])]);
@@ -51,7 +53,7 @@
         : bac.years.map((yr, i) => yr + ' : ' + fr(bac.taux[i], 1) + ' %');
       s += lines.map((L, i) => st.N
         ? '<text x="0" y="' + (110 + i * 34) + '" style="font:400 19px Bitter;fill:' + INK + '">' + L + '</text>'
-        : '<text x="' + (i < 6 ? 30 : 330) + '" y="' + (70 + (i % 6) * 34) + '" style="font:400 17px Roboto;fill:' + INK + '">' + L + '</text>').join('');
+        : '<text x="' + (i < 6 ? 30 : W / 2 + 10) + '" y="' + (70 + (i % 6) * 34) + '" style="font:400 17px Roboto;fill:' + INK + '">' + L + '</text>').join('');
     } else if (!st.D && !st.V && !st.N) {
       s += '<text x="' + (W / 2) + '" y="' + (H / 2) + '" text-anchor="middle" style="font-size:15px">Activez un pilier.</text>';
     }
@@ -162,7 +164,7 @@
           s += '<path class="fade-in" d="M' + cx + ' ' + (cy - 11) + 'L' + (cx + 10) + ' ' + (cy + 8) + 'L' + (cx - 10) + ' ' + (cy + 8) + 'Z" fill="' + (on ? ACC : '#2f6f9f') + '" stroke="#fff" stroke-width="1.5"/>';
           if (on) s += '<circle cx="' + cx + '" cy="' + cy + '" r="24" fill="none" stroke="' + ACC + '" stroke-width="2.5"/>' +
             '<text x="' + (cx + 30) + '" y="' + (cy + 6) + '" class="lbl-accent" style="font-size:17px;' + halo + '">Broad Street</text>';
-          if (on && st >= 5) s += '<text x="' + (cx + 30) + '" y="' + (cy + 28) + '" style="font-size:14px;fill:' + INK + ';' + halo + '">poignée retirée le 8 septembre</text>';
+          if (on && st >= 5) s += '<text x="' + cx + '" y="' + (cy + 50) + '" text-anchor="middle" style="font-size:14px;fill:' + INK + ';' + halo + '">poignée retirée le 8 septembre</text>';
         });
         return svg(W, H, s, 'snow');
       };
@@ -250,7 +252,7 @@
     id: 'qui-manque', kicker: 'Pilier données', title: 'Qui manque dans ce fichier ?',
     lead: 'Un fichier contient ' + fr(D.prenoms.total) + ' prénoms mauritaniens avec l’année de naissance. Voici leur répartition.',
     build(b) {
-      const h = D.prenoms.hist, W = 680, H = 260, l = 50, r = 16, t = 20, bt = 34;
+      const h = D.prenoms.hist, W = K.narrow() ? 400 : 680, H = 260, l = 50, r = 16, t = 20, bt = 34;
       const x = scale(1960, 2011, l, W - r), y = scale(0, 12000, H - bt, t), bw = (x(1) - x(0)) * .82;
       let s = yAxis(y, [0, 4000, 8000, 12000], l, W - r);
       h.years.forEach((yr, i) => { if (yr >= 1960 && yr <= 2010) s += '<rect class="grow" style="animation-delay:' + ((yr - 1960) * 12) + 'ms" x="' + (x(yr) - bw / 2) + '" y="' + y(h.n[i]) + '" width="' + bw + '" height="' + (y(0) - y(h.n[i])) + '" fill="' + GREY + '"/>'; });
@@ -279,12 +281,12 @@
       const m = D.meteo;
       b.innerHTML = '<div class="row" data-months style="gap:6px">' + K.MOIS.map((mo, i) => '<button class="chip" data-m="' + i + '">' + mo + '</button>').join('') + '</div>' +
         '<div class="viz main"><div data-chart></div><div class="viz-caption">Température moyenne quotidienne par mois, Nouakchott, ' + m.periode[0].slice(0, 4) + '–' + m.periode[1].slice(0, 4) + '.</div></div><div data-after></div>';
-      const W = 680, H = 280, l = 40, r = 10, t = 28, bt = 30;
+      const N = K.narrow(), W = N ? 400 : 680, H = 280, l = N ? 46 : 40, r = 10, t = 28, bt = 30;
       const x = i => l + (W - l - r) / 12 * (i + .5), y = scale(0, 32, H - bt, t), bw = (W - l - r) / 12 * .7;
       const hot = m.temp.indexOf(Math.max(...m.temp));
       const draw = pick => {
         let s = yAxis(y, [0, 10, 20, 30], l, W - r, v => v + ' °C');
-        s += K.MOIS.map((mo, i) => '<text x="' + x(i) + '" y="' + (H - bt + 18) + '" text-anchor="middle"' + (i === hot && pick != null ? ' class="lbl-accent"' : '') + '>' + mo + '</text>').join('');
+        s += K.MOIS.map((mo, i) => '<text x="' + x(i) + '" y="' + (H - bt + 18) + '" text-anchor="middle"' + (i === hot && pick != null ? ' class="lbl-accent"' : '') + '>' + (N ? 'JFMAMJJASOND'[i] : mo) + '</text>').join('');
         if (pick == null) s += '<text x="' + (W / 2) + '" y="' + (H / 2) + '" text-anchor="middle" style="font:700 54px Bitter;fill:#e5e7eb">?</text>';
         else {
           m.temp.forEach((v, i) => {
@@ -311,14 +313,14 @@
 
   // 7. Pilier visualisation : la complexité inutile.
   function complexChart() {
-    const W = 680, H = 360, l = 54, r = 50, t = 40, bt = 86;
+    const N = K.narrow(), W = N ? 400 : 680, H = 360, l = 54, r = 50, t = 40, bt = 86, bw = N ? 16 : 32;
     const x = scale(2014.5, 2025.5, l, W - r), yl = scale(0, 60000, H - bt, t), yr = scale(0, 45, H - bt, t);
     const cols = {SN: '#4472C4', M: '#5B9BD5', LM: '#70AD47', LO: '#4BACC6'};
     let s = '<rect x="0" y="0" width="' + W + '" height="' + H + '" fill="#f2f2f2"/>';
-    s += '<text x="' + W / 2 + '" y="22" text-anchor="middle" style="font:700 15px Roboto;fill:#333">Bac 2015-2025 : candidats et taux d’admission par série</text>';
+    s += '<text x="' + W / 2 + '" y="22" text-anchor="middle" style="font:700 15px Roboto;fill:#333">' + (N ? 'Bac : candidats et taux par série' : 'Bac 2015-2025 : candidats et taux d’admission par série') + '</text>';
     [0, 10000, 20000, 30000, 40000, 50000, 60000].forEach(v => { s += '<line x1="' + l + '" x2="' + (W - r) + '" y1="' + yl(v) + '" y2="' + yl(v) + '" stroke="#bbb"/><text x="' + (l - 6) + '" y="' + (yl(v) + 4) + '" text-anchor="end" style="font-size:10px">' + v + '</text>'; });
     [0, 15, 30, 45].forEach(v => { s += '<text x="' + (W - r + 6) + '" y="' + (yr(v) + 4) + '" style="font-size:10px">' + v + '%</text>'; });
-    bac.years.forEach((yy, i) => { s += '<rect x="' + (x(yy) - 16) + '" y="' + yl(bac.candidats[i]) + '" width="32" height="' + (yl(0) - yl(bac.candidats[i])) + '" fill="#9DC3E6"/>'; });
+    bac.years.forEach((yy, i) => { s += '<rect x="' + (x(yy) - bw / 2) + '" y="' + yl(bac.candidats[i]) + '" width="' + bw + '" height="' + (yl(0) - yl(bac.candidats[i])) + '" fill="#9DC3E6"/>'; });
     Object.keys(cols).forEach((k, j) => {
       const pts = bac.years.map((yy, i) => [x(yy), yr(bac.serie[k][i])]);
       s += '<path d="' + path(pts) + '" fill="none" stroke="' + cols[k] + '" stroke-width="2"/>';
@@ -326,16 +328,19 @@
     });
     bac.years.forEach(yy => { s += '<text transform="translate(' + x(yy) + ' ' + (H - bt + 12) + ') rotate(-60)" text-anchor="end" style="font-size:10px">' + yy + '</text>'; });
     const leg = [['Candidats', '#9DC3E6'], ['SN', cols.SN], ['M', cols.M], ['LM', cols.LM], ['LO', cols.LO]];
-    leg.forEach((g, i) => { s += '<rect x="' + (150 + i * 82) + '" y="' + (H - 18) + '" width="10" height="10" fill="' + g[1] + '"/><text x="' + (164 + i * 82) + '" y="' + (H - 9) + '" style="font-size:10px">' + g[0] + '</text>'; });
+    const lx = i => N ? l - 40 + i * (W - l + 40) / 5 : 150 + i * 82;
+    leg.forEach((g, i) => { s += '<rect x="' + lx(i) + '" y="' + (H - 18) + '" width="10" height="10" fill="' + g[1] + '"/><text x="' + (lx(i) + 14) + '" y="' + (H - 9) + '" style="font-size:10px">' + g[0] + '</text>'; });
     return svg(W, H, s);
   }
   function simpleChart(year) {
     const i = bac.years.indexOf(year);
     const rows = Object.keys(bac.serie).map(k => [k, bac.serie[k][i]]).sort((a, c) => c[1] - a[1]);
     const names = {SN: 'Sciences naturelles (SN)', M: 'Mathématiques (M)', LM: 'Lettres modernes (LM)', LO: 'Lettres originelles (LO)'};
-    const W = 680, H = 230, l = 200, r = 70, t = 46;
+    const N = K.narrow(), W = N ? 400 : 680, l = N ? 110 : 200, r = N ? 64 : 70;
+    const tl = K.lines('En ' + year + ', la série M a le meilleur taux d’admission', N ? 32 : 99), t = 26 + tl.length * 22, H = t + 184;
+    if (N) Object.assign(names, {SN: 'Sc. nat. (SN)', M: 'Maths (M)', LM: 'Lettres mod.', LO: 'Lettres orig.'});
     const x = scale(0, 45, l, W - r);
-    let s = '<text class="title" x="0" y="20">En ' + year + ', la série M a le meilleur taux d’admission</text>';
+    let s = K.tlines(0, 20, tl.join(' '), N ? 32 : 99, 'class="title"', 22);
     rows.forEach((rw, j) => {
       const yy = t + j * 44;
       s += '<text x="' + (l - 10) + '" y="' + (yy + 20) + '" text-anchor="end" class="' + (j ? '' : 'lbl-strong') + '" style="font-size:14px">' + names[rw[0]] + '</text>';
@@ -374,7 +379,7 @@
 
   // 8. La forme avant la fonction ? Course contre la montre.
   function radial(rows, done) {
-    const W = 600, H = 600, cx = 300, cy = 300, r0 = 50, k = 5.4;
+    const W = 600, H = 600, cx = 300, cy = 300, r0 = 50, k = K.narrow() ? 3.4 : 5.4;
     let s = '<circle cx="' + cx + '" cy="' + cy + '" r="' + r0 + '" fill="none" stroke="#eee"/>';
     rows.forEach((d, i) => {
       const a = -Math.PI / 2 + i / rows.length * 2 * Math.PI, r1 = r0 + d.taux * k;
@@ -387,11 +392,11 @@
         '<text transform="translate(' + lx + ' ' + ly + ') rotate(' + (flip ? deg + 180 : deg) + ')" text-anchor="' + (flip ? 'end' : 'start') + '" dy="4" style="font-size:11px;fill:#444">' + esc(d.w) + '</text>' +
         '<line x1="' + cx + '" y1="' + cy + '" x2="' + (cx + (r1 + 120) * Math.cos(a)) + '" y2="' + (cy + (r1 + 120) * Math.sin(a)) + '" stroke="transparent" stroke-width="22"/></g>';
     });
-    return svg(W, H, s);
+    return svg(W, H, s, 'radial');
   }
   function sortedBars(rows) {
     const sorted = rows.slice().sort((a, c) => c.taux - a.taux);
-    const W = 680, row = 25, H = sorted.length * row + 10, l = 160, r = 60;
+    const N = K.narrow(), W = N ? 400 : 680, row = 25, H = sorted.length * row + 10, l = N ? 150 : 160, r = N ? 50 : 60;
     const x = scale(0, 25, l, W - r);
     let s = '';
     sorted.forEach((d, j) => {
@@ -546,14 +551,16 @@
         const n = P.noms[key].n, share = [];
         for (let yy = y0; yy <= y1; yy++) share.push(1000 * n[yy - P.y0] / P.naissances[yy - P.y0]);
         const total = n.reduce((a, c) => a + c, 0), peak = share.indexOf(Math.max(...share)), mx = Math.max(...share);
-        const W = 680, H = 280, l = 44, r = 20, t = 64, bt = 30;
+        const N = K.narrow(), W = N ? 400 : 680, l = 44, r = 20, bt = 30;
+        const sub = 'Le plus fréquent en ' + (y0 + peak) + ' : ' + fr(share[peak], 1) + ' naissances sur 1 000.', sl = K.lines(sub, N ? 44 : 99);
+        const t = 50 + sl.length * 20, H = t + 216;
         const x = scale(y0, y1, l, W - r), y = scale(0, mx * 1.15, H - bt, t);
         const step = mx > 40 ? 20 : mx > 16 ? 5 : mx > 6 ? 2 : mx > 2 ? 1 : .5;
         const ticks = []; for (let v = 0; v <= mx * 1.15; v += step) ticks.push(v);
         let s = '<text class="title" x="0" y="20">' + esc(key) + ' : ' + fr(total) + ' personne' + (total > 1 ? 's' : '') + '</text>' +
-          '<text class="subtitle" x="0" y="42">Le plus fréquent en ' + (y0 + peak) + ' : ' + fr(share[peak], 1) + ' naissances sur 1 000.</text>';
+          K.tlines(0, 42, sub, N ? 44 : 99, 'class="subtitle"', 20);
         s += yAxis(y, ticks, l, W - r, v => fr(v, step < 1 ? 1 : 0));
-        [1980, 1985, 1990, 1995, 2000, 2005].forEach(yy => { s += '<text x="' + x(yy) + '" y="' + (H - bt + 18) + '" text-anchor="middle">' + yy + '</text>'; });
+        (N ? [1980, 1990, 2000] : [1980, 1985, 1990, 1995, 2000, 2005]).forEach(yy => { s += '<text x="' + x(yy) + '" y="' + (H - bt + 18) + '" text-anchor="middle">' + yy + '</text>'; });
         const pts = share.map((v, i) => [x(y0 + i), y(v)]);
         s += '<path d="' + path([[x(y0), y(0)], ...pts, [x(y1), y(0)]]) + 'Z" fill="' + ACC + '" opacity=".12"/>';
         s += '<path class="draw" d="' + path(pts) + '" fill="none" stroke="' + ACC + '" stroke-width="2.5"/>';
@@ -578,7 +585,7 @@
 
   // 12. Une classe de 30 : rendre le pourcentage humain.
   function classroom(n, total = 30) {
-    const W = 600, H = 300, cols = 10, cw = W / cols, rh = 96;
+    const cols = K.narrow() ? 6 : 10, W = 600, cw = W / cols, rh = 96, H = 30 + (Math.ceil(total / cols) - 1) * rh + 66;
     let s = '';
     for (let i = 0; i < total; i++) {
       const cx = cw * (i % cols) + cw / 2, cy = 30 + Math.floor(i / cols) * rh, on = i < n;
@@ -672,19 +679,21 @@
     ['legend', 'Légende inutile'], ['rot', 'Dates inclinées'], ['border', 'Cadre']
   ];
   function trendChart(on, story) {
-    const T = D.trend, n = T.values.length, W = 680, H = story ? 320 : 300, l = 40, r = 14, t = story ? 70 : 34, bt = on.rot ? 52 : 30;
+    const N = K.narrow(), T = D.trend, n = T.values.length, W = N ? 400 : 680, l = 40, r = 14, bt = on.rot ? 52 : 30;
+    const SUB = 'Intérêt de recherche Google pour « Bac » (100 = maximum). En couleur : le pic de chaque année.', sl = K.lines(SUB, N ? 48 : 120);
+    const t = story ? 50 + sl.length * 20 : 34, H = t + (story ? 250 : 266);
     const x = scale(0, n - 1, l, W - r), y = scale(0, 100, H - bt, t);
     let s = '';
     if (on.bg) s += '<rect width="' + W + '" height="' + H + '" fill="#e9e9e9"/>';
     if (on.border) s += '<rect x="1" y="1" width="' + (W - 2) + '" height="' + (H - 2) + '" fill="none" stroke="#333" stroke-width="2"/>';
-    if (story) s += '<text class="title" x="0" y="22">Chaque été, la Mauritanie cherche « Bac »</text><text class="subtitle" x="0" y="44">Intérêt de recherche Google pour « Bac » (100 = maximum). En couleur : le pic de chaque année.</text>';
+    if (story) s += '<text class="title" x="0" y="22">Chaque été, la Mauritanie cherche « Bac »</text>' + K.tlines(0, 44, SUB, N ? 48 : 120, 'class="subtitle"', 20);
     else s += '<text x="' + (on.bg ? 12 : 0) + '" y="20" style="font:700 14px Roboto;fill:#333">Google Trends - Bac - Mauritanie - 2004-2024</text>';
     [0, 25, 50, 75, 100].forEach(v => {
       s += '<line x1="' + l + '" x2="' + (W - r) + '" y1="' + y(v) + '" y2="' + y(v) + '" stroke="' + (on.grid ? '#777' : '#eceef1') + '" stroke-width="' + (on.grid ? 1.4 : 1) + '"/>';
       s += '<text x="' + (l - 6) + '" y="' + (y(v) + 4) + '" text-anchor="end">' + v + '</text>';
     });
     if (on.grid) for (let i = 0; i < n; i += 12) s += '<line x1="' + x(i) + '" x2="' + x(i) + '" y1="' + t + '" y2="' + y(0) + '" stroke="#777" stroke-width="1.2"/>';
-    for (let i = 0; i < n; i += 24) {
+    for (let i = 0; i < n; i += N ? 48 : 24) {
       const lab = T.dates[i].slice(0, 4);
       s += on.rot ? '<text transform="translate(' + x(i) + ' ' + (H - bt + 12) + ') rotate(-45)" text-anchor="end">' + T.dates[i] + '</text>'
         : '<text x="' + x(i) + '" y="' + (H - bt + 18) + '" text-anchor="middle">' + lab + '</text>';
@@ -731,7 +740,7 @@
 
   // 15. Gestalt : légende ou étiquettes directes ?
   function serieChart(st) {
-    const W = 680, H = 330, l = 54, r = st.prox ? 190 : 20, t = 24, bt = st.prox ? 34 : 74;
+    const N = K.narrow(), W = N ? 400 : 680, H = 330, l = 54, r = st.prox ? (N ? 150 : 190) : 20, t = 24, bt = st.prox ? 34 : (N ? 96 : 74);
     const x = scale(2015, 2025, l, W - r), y = scale(0, 45, H - bt, t);
     const cols = {SN: '#4e79a7', M: '#59a14f', LM: '#e15759', LO: '#b07aa1'};
     const names = {SN: 'Sciences nat. (SN)', M: 'Maths (M)', LM: 'Lettres mod. (LM)', LO: 'Lettres orig. (LO)'};
@@ -748,8 +757,9 @@
     });
     if (!st.prox) {
       const keys = Object.keys(cols);
-      s += '<rect x="' + l + '" y="' + (H - 30) + '" width="' + (W - l - 20) + '" height="26" fill="none" stroke="#d1d5db"/>';
-      keys.forEach((k, i) => { s += '<line x1="' + (l + 14 + i * 150) + '" x2="' + (l + 34 + i * 150) + '" y1="' + (H - 17) + '" y2="' + (H - 17) + '" stroke="' + (st.sim ? (k === 'LM' ? ACC : GREY2) : cols[k]) + '" stroke-width="3"/><text x="' + (l + 40 + i * 150) + '" y="' + (H - 12) + '" style="font-size:12px">' + names[k] + '</text>'; });
+      const lx = i => N ? (i % 2) * 190 : l + i * 150, ly = i => N ? H - 44 + Math.floor(i / 2) * 26 : H - 17, bh = N ? 54 : 26;
+      s += '<rect x="' + (N ? 0 : l) + '" y="' + (H - bh - 4) + '" width="' + (N ? W : W - l - 20) + '" height="' + bh + '" fill="none" stroke="#d1d5db"/>';
+      keys.forEach((k, i) => { s += '<line x1="' + (lx(i) + 14) + '" x2="' + (lx(i) + 34) + '" y1="' + ly(i) + '" y2="' + ly(i) + '" stroke="' + (st.sim ? (k === 'LM' ? ACC : GREY2) : cols[k]) + '" stroke-width="3"/><text x="' + (lx(i) + 40) + '" y="' + (ly(i) + 5) + '" style="font-size:12px">' + names[k] + '</text>'; });
     }
     return svg(W, H, s);
   }
@@ -850,8 +860,7 @@
         'Couleur, taille, position guident l’œil ; <b>retirez</b> ce qui ne sert pas le message.',
         'Adaptez-vous au <b>public</b> : l’exécutif veut le « so what ? », l’analyste la méthode.',
         'Mêmes données, plusieurs histoires : choisissez la <b>période</b> et l’<b>axe</b> pour éclairer, pas pour impressionner.'
-      ].map(x => '<li><span>' + x + '</span></li>').join('') + '</ol>' +
-        M.note('dog', '<p><b>Prochaine séance : TD 1.</b> Le même graphique en Matplotlib, Seaborn et Altair. Venez avec Python et un notebook qui fonctionne.</p>');
+      ].map(x => '<li><span>' + x + '</span></li>').join('') + '</ol>';
     }
   });
 
@@ -861,7 +870,7 @@
   function heat(focus) {
     const WY = bac.wilayaYears, years = bac.years, i25 = years.indexOf(2025);
     const rows = Object.keys(WY).sort((a, c) => WY[c][i25] - WY[a][i25]);
-    const W = 680, l = 168, top = 26, cw = (W - l) / years.length, rh = 23, H = top + rows.length * rh + 4;
+    const W = K.narrow() ? 400 : 680, l = K.narrow() ? 138 : 168, top = 26, cw = (W - l) / years.length, rh = 23, H = top + rows.length * rh + 4;
     const col = v => { const t = Math.min(1, v / 30); return 'rgb(' + Math.round(255 - t * (255 - 138)) + ',' + Math.round(255 - t * (255 - 79)) + ',' + Math.round(255 - t * (255 - 140)) + ')'; };
     let s = years.map((y, j) => '<text x="' + (l + cw * j + cw / 2) + '" y="16" text-anchor="middle"' + (focus.col === j ? ' class="lbl-accent"' : '') + '>' + String(y).slice(2) + '</text>').join('');
     rows.forEach((w, r) => {
@@ -908,16 +917,16 @@
       const i15 = 0, i25 = bac.years.indexOf(2025);
       const rows = [['Ensemble', bac.taux[i15], bac.taux[i25], bac.candidats[i15], bac.candidats[i25]]].concat(
         ['SN', 'M', 'LM', 'LO'].map(k => [k, bac.serie[k][i15], bac.serie[k][i25], bac.candSerie[k][i15], bac.candSerie[k][i25]]));
-      const W = 680, l = 110, r = 150, t = 30, rh = 44, H = t + rows.length * rh;
+      const N = K.narrow(), W = N ? 400 : 680, l = N ? 84 : 110, r = N ? 70 : 150, t = 30, rh = 44, H = t + rows.length * rh;
       const x = scale(0, 45, l, W - r);
-      let s = '<text x="' + l + '" y="16" style="font-weight:700;fill:' + GREY + '">● 2015</text><text x="' + (l + 70) + '" y="16" class="lbl-accent">● 2025</text><text x="' + (W - 4) + '" y="16" text-anchor="end">candidats 2015 → 2025</text>';
+      let s = '<text x="' + l + '" y="16" style="font-weight:700;fill:' + GREY + '">● 2015</text><text x="' + (l + 70) + '" y="16" class="lbl-accent">● 2025</text>' + (N ? '' : '<text x="' + (W - 4) + '" y="16" text-anchor="end">candidats 2015 → 2025</text>');
       rows.forEach((rw, k) => {
         const y = t + k * rh + 18;
         s += '<text x="' + (l - 10) + '" y="' + (y + 5) + '" text-anchor="end" class="lbl-strong">' + rw[0] + '</text>' +
           '<line x1="' + x(rw[1]) + '" x2="' + x(rw[2]) + '" y1="' + y + '" y2="' + y + '" stroke="' + GREY2 + '" stroke-width="4"/>' +
           '<circle cx="' + x(rw[1]) + '" cy="' + y + '" r="7" fill="' + GREY + '"/><circle cx="' + x(rw[2]) + '" cy="' + y + '" r="7" fill="' + ACC + '"/>' +
           '<text x="' + (x(rw[2]) + 12) + '" y="' + (y + 5) + '" class="lbl-accent">' + fr(rw[2], 1) + ' %</text>' +
-          '<text x="' + (W - 4) + '" y="' + (y + 5) + '" text-anchor="end">' + fr(rw[3]) + ' → ' + fr(rw[4]) + '</text>';
+          (N ? '' : '<text x="' + (W - 4) + '" y="' + (y + 5) + '" text-anchor="end">' + fr(rw[3]) + ' → ' + fr(rw[4]) + '</text>');
       });
       b.innerHTML = '<div class="viz main">' + svg(W, H, s) + '<div class="viz-caption">Taux d’admission par série, 2015 et 2025, et nombre de candidats. ' + SRC_BAC + '</div></div><div data-q></div>';
       question(b.querySelector('[data-q]'), {
@@ -1001,6 +1010,29 @@
     id: 'cm1',
     title: 'Principes du data storytelling',
     lede: 'Pourquoi un même chiffre peut passer inaperçu ou marquer les esprits.',
+    model: '<span>Données</span><i>→</i><span>Visualisation</span><i>→</i><span>Narration</span>',
+    parts: [
+      {title: 'Pourquoi raconter ?', from: 'ouverture'},
+      {title: 'Les données', from: 'avions'},
+      {title: 'La visualisation', from: 'complexite'},
+      {title: 'La narration', from: 'narration'},
+      {title: 'La perception', from: 'preattentif'},
+      {title: 'Le public et l’éthique', from: 'audience'},
+      {title: 'Pour aller plus loin', from: 'histoire'}
+    ],
+    endAt: 'retenir',
+    footer: '<section class="foot-block"><h3>À faire avant le TD 1</h3><ol class="recap">' +
+        '<li><span>Trouvez un graphique dans un rapport ou un média mauritanien. Lequel des trois piliers est le plus fragile ?</span></li>' +
+        '<li><span>Réécrivez son titre pour qu’il dise le message.</span></li>' +
+        '<li><span>Traduisez un de ses pourcentages en personnes (« … sur 30 »).</span></li></ol>' +
+        '<p class="small">Au TD 1 : le même graphique en Matplotlib, Seaborn et Altair. Venez avec Python et un notebook qui fonctionne.</p></section>' +
+        '<details class="foot-details"><summary>Lexique français ↔ anglais</summary><table class="data"><thead><tr><th>Français</th><th>English</th></tr></thead><tbody><tr><td>Biais du survivant</td><td>Survivorship bias</td></tr><tr><td>Biais de confirmation</td><td>Confirmation bias</td></tr><tr><td>Pyramide inversée</td><td>Inverted pyramid</td></tr><tr><td>Accroche, « lead »</td><td>Lead</td></tr><tr><td>Message clé</td><td>Key message, « so what? »</td></tr><tr><td>Attributs pré-attentifs</td><td>Preattentive attributes</td></tr><tr><td>Charge cognitive</td><td>Cognitive load</td></tr><tr><td>Encombrement graphique</td><td>Chart junk, clutter</td></tr><tr><td>Rapport encre-données</td><td>Data-ink ratio</td></tr><tr><td>Principes de la Gestalt : proximité, similarité</td><td>Gestalt principles: proximity, similarity</td></tr><tr><td>Étiquetage direct</td><td>Direct labeling</td></tr><tr><td>Axe tronqué</td><td>Truncated axis</td></tr><tr><td>Facteur de mensonge</td><td>Lie factor</td></tr><tr><td>Récit par défilement</td><td>Scrollytelling</td></tr><tr><td>Carte de chaleur</td><td>Heatmap</td></tr><tr><td>Graphique en sucettes</td><td>Lollipop chart</td></tr><tr><td>Graphique en haltères</td><td>Dumbbell chart</td></tr><tr><td>Graphique d’unités (« 3 élèves sur 30 »)</td><td>Unit chart</td></tr><tr><td>Tableau de bord</td><td>Dashboard</td></tr></tbody></table></details>' +
+        '<details class="foot-details"><summary>Bibliographie</summary><ul class="biblio">' +
+        '<li>Cole Nussbaumer Knaflic, <i>Storytelling with Data: A Data Visualization Guide for Business Professionals</i>, Wiley, 2015.</li>' +
+        '<li>David McCandless, <i>Information Is Beautiful</i>, Collins, 2009.</li>' +
+        '<li>Dona M. Wong, <i>The Wall Street Journal Guide to Information Graphics</i>, W. W. Norton, 2010.</li>' +
+        '<li>Steve Wexler, Jeffrey Shaffer, Andy Cotgreave, <i>The Big Book of Dashboards</i>, Wiley, 2017.</li>' +
+        '<li>Jack Dougherty, Ilya Ilyankou, <i>Hands-On Data Visualization: Interactive Storytelling from Spreadsheets to Code</i>, O’Reilly, 2021. En libre accès : <a href="https://handsondataviz.org" target="_blank" rel="noopener">handsondataviz.org</a>.</li></ul></details>',
     minutes: 90,
     // Minutes prévues par étape en classe (affichées en mode Présenter).
     plan: {ouverture: 5, 'john-snow': 7, piliers: 5, avions: 6, 'qui-manque': 4, nouakchott: 4, complexite: 5, forme: 5, narration: 6,
