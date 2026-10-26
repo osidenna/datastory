@@ -333,3 +333,81 @@ body.present .present-bar { display: flex; }
 a.nav-card:hover { background: var(--marker-soft); }
 .nav-card.soon { color: var(--ink-2); background: var(--paper-2); }
 @media (max-width: 600px) { .nav-cards { grid-template-columns: 1fr; } .part-head h2 { font-size: 26px; } }
+
+/* TD : cellules Python, badges IA, questions sur papier */
+.td-howto { margin-top: 18px; }
+.td-prompt { margin: 10px 0 0; padding: 10px 12px; background: var(--surface); border-radius: 8px; font-size: 14px; }
+.ai-badge { display: inline-block; padding: 2px 9px; border-radius: 999px; font: 700 11px/1.6 var(--sans); letter-spacing: .04em; vertical-align: middle; }
+.ai-badge.is-off { background: var(--bad-soft); color: var(--bad); }
+.ai-badge.is-hint { background: var(--marker-soft); color: #7a5a00; }
+.ai-badge.is-on { background: var(--good-soft); color: var(--good); }
+.td-phase { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 28px 0 10px; font-size: 18px; }
+.td-ask { display: flex; gap: 12px; align-items: center; margin: 14px 0; padding: 12px 14px; border: 1.5px dashed var(--line-strong); border-radius: 10px; font-size: 16px; }
+.td-ask .mascot { width: 40px; height: 40px; flex: 0 0 40px; }
+.td-list { padding-left: 22px; } .td-list li { margin-bottom: 6px; }
+.td-table td, .td-table th { text-align: left !important; }
+.td .step-kicker .chip { margin-left: auto; text-transform: none; letter-spacing: 0; font-weight: 400; }
+.cell { margin: 14px 0; border-radius: 10px; overflow: hidden; border: 1px solid var(--line-strong); background: #fff; }
+.cell-code { display: block; width: 100%; min-height: 60px; padding: 14px 16px; border: 0; border-left: 4px solid var(--accent); resize: vertical; background: #fff; color: var(--ink); font: 13.5px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace; tab-size: 4; white-space: pre; overflow-x: auto; }
+.cell-code:focus { outline: 2px solid var(--marker); outline-offset: -2px; }
+.cell-bar { background: var(--paper-2) !important; }
+.td-teacher { border-top: 3px dashed var(--accent); }
+.cell-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 8px 10px; background: #fff; border-top: 1px solid var(--line); }
+.cell-bar .btn { min-height: 34px; padding: 4px 12px; font-size: 13px; }
+.cell-out { padding: 12px 14px; background: #fff; border-top: 1px solid var(--line); overflow-x: auto; }
+.cell-text { margin: 0 0 8px; font: 13px/1.5 ui-monospace, Menlo, monospace; white-space: pre-wrap; }
+.cell-text.is-error { color: var(--bad); }
+.cell-img { display: block; max-width: 100%; height: auto; margin: 4px 0; }
+.cell-html table { border-collapse: collapse; font-size: 14px; } .cell-html td, .cell-html th { padding: 4px 10px; border-bottom: 1px solid var(--line); }
+.cell-checks { list-style: none; margin: 10px 0 0; padding: 0; font-size: 14px; }
+.cell-checks li { padding: 3px 0; } .cell-checks .ok { color: var(--good); } .cell-checks .ko { color: var(--bad); }
+.setup-wrap { margin: 12px 0; } .setup-wrap > summary { cursor: pointer; font-size: 14px; color: var(--muted); }
+.options-4 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.options-4 figure { margin: 0; padding: 8px; border: 1px solid var(--line); border-radius: 8px; }
+.options-4 figcaption { font-size: 14px; margin-bottom: 4px; }
+@media (max-width: 600px) { .options-4 { grid-template-columns: 1fr; } .options-4 .chart text { font-size: 12px !important; } }
+
+/* CM 2 : facteur de mensonge, relations, daltonisme */
+.lf-panel { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+.lf-panel div { padding: 8px 10px; border-radius: 8px; background: var(--surface); }
+.lf-panel small { display: block; font-size: 12px; color: var(--muted); }
+.lf-panel b { font: 700 22px/1.2 var(--serif); }
+.lf-panel .is-ok { background: var(--good-soft); color: var(--good); }
+.lf-panel .is-ko { background: var(--bad-soft); color: var(--bad); }
+.rel-cards { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 14px 0; }
+.rel-card { padding: 10px; border: 1.5px solid var(--line-strong); border-radius: 10px; background: #fff; font-size: 13px; transition: background .2s, border-color .2s; }
+.rel-card b { display: block; font: 700 15px/1.2 var(--serif); margin-bottom: 4px; }
+.rel-card.is-on { border-color: var(--good); background: var(--good-soft); }
+.missions { display: grid; gap: 10px; }
+.cb-wrap.is-cb svg { filter: url(#deut); }
+@media (max-width: 760px) { .rel-cards { grid-template-columns: 1fr 1fr; } .lf-panel b { font-size: 17px; } }
+
+/* CM 2 : images du mur de la honte, encadré Tufte, détails des relations */
+.hall-img { margin: 0; text-align: center; }
+.hall-img img { max-width: 100%; max-height: calc(100vh - 240px); border-radius: 8px; transition: outline-color .3s; outline: 4px solid transparent; outline-offset: 3px; }
+.hall-img.is-reveal img { outline-color: var(--bad); }
+.info-box { margin: 18px 0; padding: 16px 18px; border: 1.5px solid var(--line-strong); border-left: 5px solid var(--accent); border-radius: 10px; background: var(--paper-2); font-size: 16px; }
+.info-box h3 { margin: 4px 0 8px; font-size: 18px; }
+.info-box p { margin: 0 0 10px; }
+.info-box .formula { padding: 10px 12px; background: #fff; border-radius: 8px; text-align: center; font-weight: 700; }
+.info-box .formula span { color: var(--accent); }
+button.rel-card { text-align: left; cursor: pointer; font: inherit; }
+button.rel-card:hover { border-color: var(--accent); }
+.rel-card.is-on { border-color: var(--accent); background: var(--accent-soft); }
+.rel-detail { display: grid; grid-template-columns: 340px 1fr; gap: 20px; align-items: start; margin: 4px 0 10px; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+.rel-detail h3 { margin-top: 0; }
+.pieges li::marker { color: var(--bad); }
+@media (max-width: 760px) { .rel-detail { grid-template-columns: 1fr; } }
+
+/* CM 2 : catalogue pré-attentif, rapport encre-données */
+.pa-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
+.pa-tile { position: relative; padding: 6px; border: 1.5px solid var(--line-strong); border-radius: 10px; background: #fff; cursor: pointer; }
+.pa-tile:hover { border-color: var(--accent); }
+.pa-name { display: block; min-height: 18px; font-size: 13px; font-weight: 700; color: transparent; text-align: center; }
+.pa-tile.is-on { border-color: var(--accent); background: var(--accent-soft); }
+.pa-tile.is-on .pa-name { color: var(--accent); }
+.ink-meter { display: grid; grid-template-columns: 170px 1fr; gap: 12px; align-items: center; margin-top: 8px; }
+.ink-meter small { display: block; font-size: 12px; color: var(--muted); }
+.ink-meter b { font: 700 26px/1.1 var(--serif); }
+.ink-meter .meter { margin: 0; height: 14px; }
+@media (max-width: 760px) { .pa-grid { grid-template-columns: repeat(3, 1fr); } }

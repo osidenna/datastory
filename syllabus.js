@@ -9,9 +9,9 @@ window.DS_SYLLABUS = {
   sessions: [
     {id: 'cm1', type: 'CM', n: 1, title: 'Principes du data storytelling', status: 'ready',
       gist: 'Données, visualisation, narration : les trois piliers.', from: 'lecture1.pdf'},
-    {id: 'td1', type: 'TD', n: 1, title: 'Matplotlib, Seaborn, Altair', status: 'soon',
+    {id: 'td1', type: 'TD', n: 1, title: 'Matplotlib, Seaborn, Altair', status: 'ready',
       gist: 'Un même graphique, trois bibliothèques, trois philosophies.', from: 'td1.ipynb'},
-    {id: 'cm2', type: 'CM', n: 2, title: 'Formes de visualisation et principes d’efficacité', status: 'soon',
+    {id: 'cm2', type: 'CM', n: 2, title: 'Formes de visualisation et principes d’efficacité', status: 'ready',
       gist: 'Choisir le bon graphique, data-ink, Gestalt, couleur.', from: 'lecture2.pdf'},
     {id: 'td2', type: 'TD', n: 2, title: 'Visualisations interactives avec Bokeh', status: 'soon',
       gist: 'Survol, zoom, curseurs : l’interaction au service du récit.', from: 'bokeh.ipynb'},

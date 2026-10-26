@@ -2,7 +2,8 @@
    Leçon = suite d'étapes révélées une à une (« Continuer »), ou toutes d'un coup (« Tout afficher »).
    « Présenter » : une étape par écran, flèches du clavier, Échap pour sortir. */
 (function () {
-  const S = window.DS_SYLLABUS, L = window.DS_LESSONS || {}, M = window.Mascots;
+  const S = window.DS_SYLLABUS, L = window.DS_LESSONS || {}, T = window.DS_TD || {}, M = window.Mascots;
+  const has = id => !!(L[id] || T[id]);
   const app = document.getElementById('app'), bar = document.querySelector('.progress');
   const esc = window.Kit.esc;
   const PROF = /(^|[?&])prof\b/.test(location.search);
@@ -21,7 +22,7 @@
         const inner = '<span class="plan-num">' + (i + 1) + '</span><span class="badge badge-' + s.type + '">' + s.type + ' ' + s.n + '</span>' +
           '<span><span class="plan-title">' + s.title + '</span><span class="plan-gist">' + s.gist + '</span></span>' +
           '<span class="plan-status ' + s.status + '">' + (s.status === 'ready' ? 'Ouvrir →' : 'À venir') + '</span>';
-        return '<li class="' + s.status + '">' + (s.status === 'ready' && L[s.id] ? '<a href="#/' + s.id + '">' + inner + '</a>' : '<div class="plan-row">' + inner + '</div>') + '</li>';
+        return '<li class="' + s.status + '">' + (s.status === 'ready' && has(s.id) ? '<a href="#/' + s.id + '">' + inner + '</a>' : '<div class="plan-row">' + inner + '</div>') + '</li>';
       }).join('') + '</ol></main>';
     window.scrollTo(0, 0);
   }
@@ -33,7 +34,7 @@
   // Fin de séance : ce qui est donné par la leçon (travail, lectures…) + lien vers la séance suivante.
   function foot(les, ses) {
     const k = S.sessions.indexOf(ses), nx = S.sessions[k + 1], pv = S.sessions[k - 1];
-    const card = (s, dir) => !s ? '<span></span>' : (L[s.id] && s.status === 'ready'
+    const card = (s, dir) => !s ? '<span></span>' : (has(s.id) && s.status === 'ready'
       ? '<a class="nav-card ' + dir + '" href="#/' + s.id + '"><small>' + (dir === 'next' ? 'Séance suivante →' : '← Séance précédente') + '</small><b>' + s.type + ' ' + s.n + ' · ' + s.title + '</b></a>'
       : '<div class="nav-card ' + dir + ' soon"><small>' + (dir === 'next' ? 'Séance suivante' : 'Séance précédente') + ' · à venir</small><b>' + s.type + ' ' + s.n + ' · ' + s.title + '</b></div>');
     return '<footer class="lesson-foot" hidden>' + (les.footer || '') + '<div class="nav-cards">' + card(pv, 'prev') + card(nx, 'next') + '</div></footer>';
@@ -136,10 +137,25 @@
     window.scrollTo(0, 0);
   }
 
+  // TD : les solutions (fichier <id>-solutions.js) n'existent que dans la copie de l'enseignante.
+  const solTried = {};
+  function td(id) {
+    const ses = S.sessions.find(s => s.id === id);
+    bar.style.width = '0';
+    const go = () => { window.TD.render(app, T[id], ses, {foot}); const h = location.hash.split('/')[2]; if (h && document.getElementById(h)) document.getElementById(h).scrollIntoView(); else window.scrollTo(0, 0); };
+    if (solTried[id]) return go();
+    solTried[id] = true;
+    const s = document.createElement('script');
+    s.src = id + '-solutions.js?v=' + Date.now();
+    s.onload = go; s.onerror = go;
+    document.head.appendChild(s);
+  }
+
   function route() {
     document.body.classList.remove('present');
     const id = (location.hash.split('/')[1] || '').trim();
-    if (id && L[id]) lesson(id); else home();
+    if (id && T[id]) td(id);
+    else if (id && L[id]) lesson(id); else home();
   }
   addEventListener('hashchange', route);
   route();
