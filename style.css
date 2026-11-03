@@ -411,3 +411,66 @@ button.rel-card:hover { border-color: var(--accent); }
 .ink-meter b { font: 700 26px/1.1 var(--serif); }
 .ink-meter .meter { margin: 0; height: 14px; }
 @media (max-width: 760px) { .pa-grid { grid-template-columns: repeat(3, 1fr); } }
+
+/* TD : corrigé local, graphiques Bokeh */
+.td-corr { margin-top: 18px; padding: 14px 16px; border: 2px dashed var(--good); border-radius: 12px; background: var(--good-soft); }
+.td-corr h3 { margin-top: 0; color: var(--good); }
+.td-corr ul, .td-corr ol { margin: 6px 0 10px; padding-left: 20px; }
+.corr-code { margin: 4px 0 12px; padding: 10px 12px; border: 1px solid var(--line-strong); border-radius: 8px; background: #fff; font: 12.5px/1.5 ui-monospace, Menlo, monospace; white-space: pre-wrap; }
+.td-corr-toggle[aria-pressed="true"] { background: var(--good-soft); border-color: var(--good); }
+.cell-bokeh { margin: 6px 0; overflow-x: auto; }
+
+/* TD sur logiciel (QGIS) : étapes, menus, captures, contrôles */
+.qsteps { margin: 12px 0 18px; padding-left: 26px; font-size: 16px; }
+.qsteps li { margin: 8px 0; padding-left: 4px; }
+.qmenu { display: inline-block; padding: 1px 8px; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--paper-2); font: 600 14px/1.6 var(--sans); white-space: normal; }
+.qen { color: #6a7080; font-size: 13px; font-style: italic; }
+.qshot { margin: 14px 0 18px; }
+.qshot img { display: block; max-width: 100%; height: auto; border: 1px solid var(--line-strong); border-radius: 8px; }
+.qshot figcaption { margin-top: 6px; color: #6a7080; font-size: 13.5px; }
+.qctrl { display: grid; gap: 8px; margin: 14px 0; padding: 12px 14px; border: 1.5px solid var(--line-strong); border-left: 5px solid var(--accent); border-radius: 10px; background: #fff; font-size: 15.5px; }
+.qctrl-in { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.qctrl input { width: 130px; padding: 6px 10px; border: 1.5px solid var(--line-strong); border-radius: 8px; font: 600 16px var(--sans); }
+.qctrl-out:empty { display: none; }
+.qctrl-out.ok { color: #2e6b4f; font-weight: 600; }
+.qctrl-out.ko { color: #b4532a; font-weight: 600; }
+.qtick { margin: 12px 0; padding: 0; list-style: none; font-size: 16px; }
+.qtick li { margin: 6px 0; }
+.qtick label { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; }
+.qtick input { margin-top: 5px; }
+.dl-data { display: inline-flex; align-items: center; gap: 8px; margin: 6px 0 10px; text-decoration: none; }
+
+/* CM 3 : cartes */
+.chart.map { display: block; max-height: 74vh; margin-inline: auto; }
+.sig-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+.sig-grid .viz { margin: 10px 0 0; }
+.sig-table { padding: 8px; overflow-x: auto; }
+.sig-table table { font-size: 14px; width: 100%; }
+.sig-table tr.is-sel td { background: #fff3c4; font-weight: 600; }
+.raster-canvas { display: block; width: 100%; height: auto; margin-top: 8px; border-radius: 6px; image-rendering: pixelated; }
+.fmt-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 14px 0; }
+.fmt { padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: #fff; min-width: 0; }
+.fmt h3 { margin: 0 0 6px; font-size: 21px; color: var(--accent); }
+.fmt-code { margin: 8px 0 0; padding: 8px 10px; overflow-x: auto; border-radius: 8px; background: var(--paper-2); font-size: 12.5px; line-height: 1.5; }
+.layers-wrap { display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); gap: 14px; align-items: start; }
+.layers-wrap .viz { margin: 0; }
+.layers-panel { position: relative; padding: 12px; border: 1.5px solid var(--line-strong); border-radius: 10px; background: var(--paper-2); }
+.layers-panel ol { margin: 6px 0 10px; padding: 0; list-style: none; }
+.layers-panel li { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 7px 8px; margin: 5px 0; border: 1px solid var(--line); border-radius: 8px; background: #fff; font-size: 14px; }
+.layers-panel li span { white-space: nowrap; }
+.layers-panel .chip { padding: 2px 8px; }
+.layers-panel .chip:disabled { opacity: .3; }
+.qchain { margin: 6px 0 12px; }
+@media (max-width: 760px) {
+  .sig-grid, .layers-wrap, .fmt-grid { grid-template-columns: minmax(0, 1fr); }
+}
+.chart.map text { font-size: 16px; fill: var(--ink); }
+.sig-table td, .sig-table th { padding: 4px 6px; }
+.sig-table td:not(:first-child), .sig-table th:not(:first-child) { white-space: nowrap; }
+.toc-part { margin: 12px 0 6px; font-weight: 700; font-size: 14px; color: var(--accent); }
+.toc-part:first-child { margin-top: 0; }
+.cm-fig { margin: 12px auto 16px; max-width: 620px; }
+.cm-fig img { display: block; width: 100%; height: auto; background: #fff; }
+.cm-fig-s { max-width: 420px; }
+.vote { font-size: 18px; margin: 8px 0; }
+.vote b { font-family: var(--serif, inherit); font-size: 26px; color: var(--accent); }

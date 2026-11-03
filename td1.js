@@ -139,6 +139,7 @@
   window.DS_TD = window.DS_TD || {};
   window.DS_TD.td1 = {
     id: 'td1',
+    correctionPublique: true,
     title: 'Un graphique, trois bibliothèques',
     lede: 'Le même graphique écrit en Matplotlib, en Seaborn et en Altair. Puis choisir, critiquer, reproduire, et préparer les données soi-même.',
     model: '<span>Données</span><i>→</i><span>Encodage</span><i>→</i><span>Graphique</span>',

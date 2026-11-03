@@ -275,8 +275,8 @@
         s += bins.map(([g, c]) => '<rect x="' + (x(g) + (bw > 3 ? .5 : 0)) + '" y="' + y(c) + '" width="' + Math.max(1, bw - (bw > 3 ? 1 : 0)) + '" height="' + (y(0) - y(c)) + '" fill="' + (k === 1 && (g === 10 || g === 0) ? ACC : GREY) + '"/>').join('');
         if (k === 1) {
           s += '<text x="' + (x(10) + 8) + '" y="' + (y(n[100]) + 14) + '" class="lbl-accent" style="' + halo + '">' + fr(n[100]) + ' entre 10,0 et 10,1</text>' +
-            '<line x1="' + x(9.75) + '" x2="' + x(9.75) + '" y1="' + y(150) + '" y2="' + y(1500) + '" stroke="' + INK + '" stroke-width="1"/>' +
-            '<text x="' + (x(9.75) - 4) + '" y="' + (y(1500) - 4) + '" text-anchor="end" class="lbl-strong" style="' + halo + '">de 9,5 à 10 : ' + fr(n.slice(95, 100).reduce((a, c) => a + c, 0)) + ' en tout</text>' +
+            '<line x1="' + x(9.5) + '" x2="' + x(9.5) + '" y1="' + y(150) + '" y2="' + y(1500) + '" stroke="' + INK + '" stroke-width="1"/>' +
+            '<text x="' + (x(9.5) - 4) + '" y="' + (y(1500) - 4) + '" text-anchor="end" class="lbl-strong" style="' + halo + '">de 9 à 10 : ' + fr(n.slice(90, 100).reduce((a, c) => a + c, 0)) + ' en tout</text>' +
             '<text x="' + (x(0) + 8) + '" y="' + (y(n[0]) + 14) + '" class="lbl-accent" style="' + halo + '">' + fr(n[0]) + ' notes sous 0,1</text>';
         }
         b.querySelector('[data-chart]').innerHTML = svg(W, H, s);
@@ -286,7 +286,7 @@
       }));
       draw(20);
       question(b.querySelector('[data-q]'), {
-        prompt: 'Avec des classes de 0,1 point : pourquoi presque personne juste sous 10, et un pic juste à 10 ?',
+        prompt: 'Avec des classes de 0,1 point : pourquoi si peu de notes entre 9 et 10 (environ 550 par dixième juste avant 9), et un pic juste à 10 ?',
         options: [
           {t: 'Une erreur de saisie', why: 'Une erreur produirait du bruit dispersé, pas un trou net sous 10 suivi d’un pic à 10.'},
           {t: 'Les données ne le disent pas : à vérifier', ok: true, why: 'Délibération du jury, arrondi, règle de rachat ? Le graphique pose la question ; il ne donne pas la cause. Même chose pour le pic à 0 : absents ? copies blanches ?'},
@@ -908,11 +908,11 @@
       {title: 'Pour aller plus loin', from: 'datasaurus'}
     ],
     endAt: 'retenir',
-    footer: '<section class="foot-block"><h3>À faire avant le TD 2</h3><ol class="recap">' +
+    footer: '<section class="foot-block"><h3>À faire avant le CM 3</h3><ol class="recap">' +
       '<li><span>Trouvez dans un média un graphique à barres dont l’axe ne commence pas à zéro. Calculez son facteur de mensonge.</span></li>' +
       '<li><span>Trouvez un camembert. Aurait-il fallu des barres ? Pourquoi ?</span></li>' +
       '<li><span>Refaites l’un des deux, à la main ou en Python.</span></li></ol>' +
-      '<p class="small">Au TD 2 : Bokeh, des graphiques interactifs (survol, zoom, curseurs).</p></section>' +
+      '<p class="small">Au CM 3 : raconter avec une carte.</p></section>' +
       '<details class="foot-details"><summary>Lexique français ↔ anglais</summary><table class="data"><thead><tr><th>Français</th><th>English</th></tr></thead><tbody>' + GLOSS.map(g => '<tr><td>' + g[0] + '</td><td>' + g[1] + '</td></tr>').join('') + '</tbody></table></details>' +
       '<details class="foot-details"><summary>Bibliographie</summary><ul class="biblio">' +
       '<li>Edward R. Tufte, <i>The Visual Display of Quantitative Information</i>, Graphics Press, 1983 (facteur de mensonge, rapport encre-données).</li>' +

@@ -5,6 +5,7 @@
 (function () {
   const K = window.Kit, M = window.Mascots, esc = K.esc;
   const PYODIDE = 'https://cdn.jsdelivr.net/pyodide/v0.27.7/full/';
+  const BOKEH_JS = v => ['https://cdn.bokeh.org/bokeh/release/bokeh-' + v + '.min.js', 'https://cdn.bokeh.org/bokeh/release/bokeh-widgets-' + v + '.min.js'];
   const VEGA = ['https://cdn.jsdelivr.net/npm/vega@5.30.0', 'https://cdn.jsdelivr.net/npm/vega-lite@5.21.0', 'https://cdn.jsdelivr.net/npm/vega-embed@6.26.0'];
 
   /* ---------- Noyau Python ---------- */
@@ -21,8 +22,14 @@
     '    m = type(x).__module__ or ""',
     '    if x is None or m.startswith("matplotlib"): return "none"',
     '    if m.startswith("altair"): return "altair"',
+    '    if m.startswith("bokeh"): return "bokeh"',
     '    if hasattr(x, "_repr_html_"): return "html"',
     '    return "repr"',
+    '_ds_bokeh = []',
+    'def _ds_bokeh_items():',
+    '    import json',
+    '    from bokeh.embed import json_item',
+    '    return [json.dumps(json_item(o)) for o in _ds_bokeh]',
     'def _ds_checks(r):',
     '    return [[bool(a), str(b)] for a, b in r]',
     'def _ds_figs():',
@@ -58,6 +65,11 @@
       need.forEach(n => installed.add(n));
     }
     await py.loadPackagesFromImports(code, {messageCallback: () => {}});
+    // Bokeh : show() et output_notebook() sont interceptés ; les figures montrées s'affichent sous la cellule.
+    if (/\bbokeh\b/.test(code) && !installed.has('bokeh-patch')) {
+      py.runPython('import bokeh, bokeh.io, bokeh.plotting\ndef _ds_show(obj, *a, **k):\n    _ds_bokeh.append(obj)\nbokeh.io.show = _ds_show\nbokeh.plotting.show = _ds_show\nbokeh.io.output_notebook = lambda *a, **k: None\nbokeh.io.output_file = lambda *a, **k: None');
+      installed.add('bokeh-patch');
+    }
   }
   // Exécute du code dans l'espace de noms de la page ; renvoie sortie texte, figures, dernière valeur et vérifications.
   function run(ns, code, {status = () => {}, check = ''} = {}) {
@@ -65,7 +77,8 @@
       const py = await load(status);
       await ensure(py, code + '\n' + check, status);
       status('Exécution…');
-      let out = '', ok = true, value = null, checks = [];
+      let out = '', ok = true, value = null, checks = [], bokeh = [];
+      if (installed.has('bokeh-patch')) py.runPython('_ds_bokeh.clear()');
       py.setStdout({batched: s => { out += s + '\n'; }});
       py.setStderr({batched: s => { out += s + '\n'; }});
       try {
@@ -73,6 +86,7 @@
         if (res !== undefined && res !== null) {
           const kind = typeof res === 'object' ? py.globals.get('_ds_kind')(res) : 'repr';
           if (kind === 'altair') value = {altair: res.to_json()};
+          else if (kind === 'bokeh') py.globals.get('_ds_bokeh').append(res);
           else if (kind === 'html') value = {html: res._repr_html_()};
           else if (kind === 'repr') value = {text: typeof res === 'object' ? py.globals.get('repr')(res) : String(res)};
           res.destroy?.();
@@ -90,11 +104,21 @@
       }
       let images = [];
       try { const p = py.globals.get('_ds_figs')(); images = p.toJs(); p.destroy(); } catch (_) { /* rien */ }
-      return {ok, out: out.trimEnd(), value, images, checks};
+      if (installed.has('bokeh-patch')) {
+        try { const b = py.globals.get('_ds_bokeh_items')(); bokeh = b.toJs(); b.destroy(); } catch (e) { out += '\n' + String(e.message || e).split('\n').slice(-2).join('\n'); }
+      }
+      return {ok, out: out.trimEnd(), value, images, checks, bokeh, bokehVersion: installed.has('bokeh-patch') ? py.runPython('bokeh.__version__') : null};
     });
   }
   async function namespace(status) {
     return job(async () => { const py = await load(status); return {ns: py.globals.get('dict')()}; });
+  }
+  let bk = null;
+  async function embedBokeh(el, json, version) {
+    if (!bk) bk = (async () => { if (!window.Bokeh) for (const s of BOKEH_JS(version)) await script(s); })();
+    bk.catch(() => { bk = null; });
+    await bk;
+    await window.Bokeh.embed.embed_item(JSON.parse(json), el);
   }
   async function embedAltair(el, json) {
     if (!vega) vega = (async () => { if (!window.vegaEmbed) for (const s of VEGA) await script(s); })();
@@ -126,13 +150,26 @@
     if (p.note) return M.note(p.mascot || 'lion', '<p>' + inline(p.note) + '</p>');
     if (p.details) return '<details class="foot-details"><summary>' + p.details + '</summary>' + (p.body || '') + '</details>';
     if (p.q) return '<div data-q="' + p.q + '"></div>';
+    if (p.steps) return '<ol class="qsteps">' + p.steps.map(x => typeof x === 'string' ? '<li>' + inline(x) + '</li>'
+      : '<li>' + inline(x.t) + (x.menu ? ' <span class="qmenu">' + x.menu + '</span>' : '') + (x.en ? ' <span class="qen">' + x.en + '</span>' : '') + '</li>').join('') + '</ol>';
+    if (p.shot) return '<figure class="qshot"><img loading="lazy" src="' + p.shot + '" alt="' + esc(p.alt || p.caption || 'Capture de QGIS') + '">' + (p.caption ? '<figcaption>' + inline(p.caption) + '</figcaption>' : '') + '</figure>';
+    if (p.ctrl) return '<form class="qctrl" data-ctrl="' + p.ctrl.id + '"><label for="c-' + p.ctrl.id + '">' + inline(p.ctrl.label) + '</label><span class="qctrl-in"><input id="c-' + p.ctrl.id + '" inputmode="decimal" autocomplete="off">' +
+      (p.ctrl.unit ? '<span class="small">' + p.ctrl.unit + '</span>' : '') + '<button class="btn btn-ghost">Contrôler</button></span><output class="qctrl-out" aria-live="polite"></output></form>';
+    if (p.tick) return '<ul class="qtick">' + p.tick.map((t, i) => '<li><label><input type="checkbox" data-tick="' + i + '"><span>' + inline(t) + '</span></label></li>').join('') + '</ul>';
     if (p.html) return p.html;
     return '';
   }
 
+  // Bloc de corrigé d'un exercice : réponses écrites + code des solutions.
+  function corrHTML(ex, corr, sol) {
+    const codes = ex.parts.filter(p => p.cell && sol[p.cell.id]).map(p => '<p class="small"><b>Cellule ' + esc(p.cell.id) + '</b></p><pre class="corr-code">' + esc(sol[p.cell.id]) + '</pre>').join('');
+    return '<div class="td-corr" hidden><h3>📘 Correction</h3>' + (corr[ex.id] || '') + codes + '</div>';
+  }
   function render(app, tdIn, ses, helpers) {
     // Version enseignante (fichier local <td>-solutions.js, jamais publié) : exercices de référence ajoutés à la fin.
     const extra = (window.DS_TD_TEACHER || {})[tdIn.id];
+    const corr = (window.DS_TD_CORR || {})[tdIn.id], solAll = (window.DS_TD_SOL || {})[tdIn.id] || {};
+    const corrLabel = tdIn.correctionPublique ? '📘 Voir la correction' : '📘 Corrigé (enseignante, local)';
     const td = extra ? Object.assign({}, tdIn, {exercises: tdIn.exercises.concat(extra)}) : tdIn;
     document.title = ses.type + ' ' + ses.n + ' · ' + td.title;
     const marks = (() => { try { return JSON.parse(localStorage.getItem('ds-td-' + td.id) || '{}'); } catch (e) { return {}; } })();
@@ -141,22 +178,44 @@
     td.exercises.forEach(ex => ex.parts.forEach(p => { if (p.cell) { cells.push(p.cell); exOf[p.cell.id] = ex.id; } }));
     app.innerHTML = '<main class="lesson td"><header class="lesson-head"><div class="crumbs"><a href="#/">Le cours</a> / ' + ses.type + ' ' + ses.n + '</div>' +
       '<h1>' + td.title + '</h1><p class="lede">' + td.lede + '</p>' + (td.model ? '<p class="model">' + td.model + '</p>' : '') +
+      (corr ? '<div class="lesson-tools"><button class="tool td-corr-toggle" aria-pressed="false">' + corrLabel + '</button></div>' : '') +
       '<div class="td-howto">' + td.howto + '</div>' +
-      '<nav class="toc" aria-label="Exercices"><ol>' + td.exercises.map((ex, k) => '<li><a href="#" data-go="' + ex.id + '"><span>' + (k + 1) + '</span>' + ex.title + (ex.extra ? ' <em class="small">(en plus)</em>' : '') + '</a></li>').join('') + '</ol></nav></header>' +
-      td.exercises.map((ex, k) => (ex.teacher ? (td.exercises[k - 1].teacher ? '' : '<div class="part-head"><span>Version enseignante · locale, jamais publiée</span><h2>Le code complet</h2></div>') : ex.extra && !td.exercises[k - 1].extra ? '<div class="part-head"><span>Pour aller plus loin</span><h2>Si vous avez fini</h2></div>' : '') +
+      '<nav class="toc" aria-label="Exercices">' + (td.exercises[0].partHead ? '' : '<ol>') + td.exercises.map((ex, k) => (ex.partHead ? (k ? '</ol>' : '') + '<p class="toc-part">' + ex.partHead.k + ' · ' + ex.partHead.t + '</p><ol>' : '') + '<li><a href="#" data-go="' + ex.id + '"><span>' + (k + 1) + '</span>' + ex.title + (ex.extra ? ' <em class="small">(en plus)</em>' : '') + '</a></li>').join('') + '</ol></nav></header>' +
+      td.exercises.map((ex, k) => (ex.partHead ? '<div class="part-head"><span>' + ex.partHead.k + '</span><h2>' + ex.partHead.t + '</h2></div>' : '') + (ex.teacher ? (td.exercises[k - 1].teacher ? '' : '<div class="part-head"><span>Version enseignante · locale, jamais publiée</span><h2>Le code complet</h2></div>') : ex.extra && !td.exercises[k - 1].extra ? '<div class="part-head"><span>Pour aller plus loin</span><h2>Si vous avez fini</h2></div>' : '') +
         '<section class="step td-ex' + (ex.teacher ? ' td-teacher' : '') + '" id="' + ex.id + '"><div class="step-kicker"><span class="n">' + (ex.teacher ? 'Référence' : 'Exercice ' + (k + 1)) + '</span><span>≈ ' + ex.minutes + ' min</span>' +
         '<button class="chip td-mark" data-ex="' + ex.id + '" aria-pressed="' + (marks[ex.id] ? 'true' : 'false') + '">' + (marks[ex.id] ? '✓ Fait' : 'Marquer comme fait') + '</button></div>' +
         '<h2>' + ex.title + '</h2>' + (ex.lead ? '<p class="step-lead">' + inline(ex.lead) + '</p>' : '') +
-        '<div class="step-body">' + ex.parts.map(partHTML).join('') + '</div></section>').join('') +
+        '<div class="step-body">' + ex.parts.map(partHTML).join('') + '</div>' + (corr && !ex.teacher ? corrHTML(ex, corr, solAll) : '') + '</section>').join('') +
       helpers.foot(td, ses).replace(' hidden>', '>') + '</main>';
 
     app.querySelectorAll('[data-go]').forEach(a => a.addEventListener('click', e => { e.preventDefault(); document.getElementById(a.dataset.go).scrollIntoView({behavior: 'smooth'}); }));
+    const ct = app.querySelector('.td-corr-toggle');
+    if (ct) ct.addEventListener('click', () => {
+      const on = ct.getAttribute('aria-pressed') !== 'true';
+      ct.setAttribute('aria-pressed', on ? 'true' : 'false');
+      ct.textContent = on ? (tdIn.correctionPublique ? '📘 Masquer la correction' : '📘 Masquer le corrigé') : corrLabel;
+      app.querySelectorAll('.td-corr').forEach(d => { d.hidden = !on; });
+    });
     app.querySelectorAll('.td-mark').forEach(b => b.addEventListener('click', () => {
       marks[b.dataset.ex] = !marks[b.dataset.ex]; save();
       b.setAttribute('aria-pressed', marks[b.dataset.ex] ? 'true' : 'false'); b.textContent = marks[b.dataset.ex] ? '✓ Fait' : 'Marquer comme fait';
     }));
     // Questions à choix
     td.exercises.forEach(ex => ex.parts.forEach(p => { if (p.q) K.question(app.querySelector('[data-q="' + p.q + '"]'), td.questions[p.q]); }));
+
+    // Contrôles : on tape le nombre lu dans QGIS, la page dit s'il est dans la marge attendue.
+    td.exercises.forEach(ex => ex.parts.forEach(p => {
+      if (!p.ctrl) return;
+      const f = app.querySelector('[data-ctrl="' + p.ctrl.id + '"]'), o = f.querySelector('output');
+      f.addEventListener('submit', e => {
+        e.preventDefault();
+        const v = parseFloat(f.querySelector('input').value.replace(/\s/g, '').replace(',', '.'));
+        if (Number.isNaN(v)) { o.textContent = 'Tapez un nombre.'; o.className = 'qctrl-out ko'; return; }
+        const ok = Math.abs(v - p.ctrl.ans) <= (p.ctrl.tol || 0);
+        o.innerHTML = ok ? '✓ ' + (p.ctrl.ok || 'Bon.') : '✗ ' + (p.ctrl.ko || 'Pas encore : reprenez l’étape.');
+        o.className = 'qctrl-out ' + (ok ? 'ok' : 'ko');
+      });
+    }));
 
     // Cellules
     let nsP = null;
@@ -183,10 +242,13 @@
         if (r.value && r.value.text) html += '<pre class="cell-text">' + esc(r.value.text) + '</pre>';
         if (r.value && r.value.html) html += '<div class="cell-html">' + r.value.html + '</div>';
         if (r.value && r.value.altair) html += '<div class="cell-altair"></div>';
+        html += r.bokeh.map(() => '<div class="cell-bokeh"></div>').join('');
         html += r.images.map(b => '<img class="cell-img" alt="Figure produite par le code" src="data:image/png;base64,' + b + '">').join('');
         if (r.checks.length) html += '<ul class="cell-checks">' + r.checks.map(c => '<li class="' + (c.ok ? 'ok' : 'ko') + '">' + (c.ok ? '✓ ' : '✗ ') + esc(c.msg) + '</li>').join('') + '</ul>';
         out.innerHTML = html; out.hidden = !html;
         if (r.value && r.value.altair) await embedAltair(out.querySelector('.cell-altair'), r.value.altair);
+        const bks = out.querySelectorAll('.cell-bokeh');
+        for (let i = 0; i < r.bokeh.length; i++) await embedBokeh(bks[i], r.bokeh[i], r.bokehVersion);
         if (r.checks.length && r.checks.every(c => c.ok)) K.confetti(el);
         status(r.ok ? (quiet ? '' : 'Terminé.') : 'Erreur : lisez le message ci-dessous.');
       } catch (e) {
@@ -205,7 +267,7 @@
       });
       el.querySelector('.cell-run').addEventListener('click', () => exec(cell, el));
       reset.addEventListener('click', () => { ta.value = cell.code; reset.hidden = true; fit(); });
-      if (sol[cell.id]) { sb.hidden = false; sb.addEventListener('click', () => { ta.value = sol[cell.id]; reset.hidden = false; fit(); }); }
+      if (sol[cell.id]) { sb.hidden = false; if (td.correctionPublique) sb.textContent = 'Remplir avec la correction'; sb.addEventListener('click', () => { ta.value = sol[cell.id]; reset.hidden = false; fit(); }); }
     });
   }
 

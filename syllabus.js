@@ -1,4 +1,5 @@
-/* Structure du site : 5 CM et 5 TD de 1 h 30 (format 2025-2026). Les 6 TP sont gérés à part, hors du site.
+/* Structure du site : 5 CM et 4 TD de 1 h 30, plus un TD extra (Bokeh, non fait en séance, n: 'extra'). Les 6 TP sont gérés à part, hors du site.
+   Les id restent ceux des fichiers : td3 est affiché TD 2, td2 est affiché TD extra.
    « from » = support de l'an dernier dont la séance est tirée. status : 'ready' | 'soon'. */
 window.DS_SYLLABUS = {
   title: 'Data storytelling et communication des résultats',
@@ -13,19 +14,19 @@ window.DS_SYLLABUS = {
       gist: 'Un même graphique, trois bibliothèques, trois philosophies.', from: 'td1.ipynb'},
     {id: 'cm2', type: 'CM', n: 2, title: 'Formes de visualisation et principes d’efficacité', status: 'ready',
       gist: 'Choisir le bon graphique, data-ink, Gestalt, couleur.', from: 'lecture2.pdf'},
-    {id: 'td2', type: 'TD', n: 2, title: 'Visualisations interactives avec Bokeh', status: 'soon',
-      gist: 'Survol, zoom, curseurs : l’interaction au service du récit.', from: 'bokeh.ipynb'},
     {id: 'cm3', type: 'CM', n: 3, title: 'Le SIG comme outil de storytelling', status: 'soon',
-      gist: 'Vecteurs, rasters, projections, cartogrammes.', from: 'cm3.pdf'},
-    {id: 'td3', type: 'TD', n: 3, title: 'Cartes électorales avec GeoPandas', status: 'soon',
-      gist: 'Joindre résultats et moughataas, cartes choroplèthes.', from: 'GeoPandas.ipynb'},
-    {id: 'td4', type: 'TD', n: 4, title: 'Cartographier la Mauritanie avec QGIS', status: 'soon',
-      gist: 'Population, relief, bâtiments et santé en couches.', from: 'td3-intro.pdf, td3.zip'},
-    {id: 'cm4', type: 'CM', n: 4, title: 'Dashboards : approche Python', status: 'soon',
-      gist: 'État, logique, vues ; vues liées ; théâtre de l’interactivité.', from: 'cm4.pptx'},
-    {id: 'td5', type: 'TD', n: 5, title: 'Construire un petit dashboard', status: 'soon',
-      gist: 'Trois paramètres directeurs, des vues liées.', from: 'nouveau'},
-    {id: 'cm5', type: 'CM', n: 5, title: 'Outils BI, données qualitatives, crowdsourcing', status: 'soon',
-      gist: 'Ce que le « no-code » cache, et quand il suffit.', from: 'annoncé dans cm4.pptx'}
+      gist: 'Vecteurs, rasters, projections, composition, cartogrammes.', from: 'cm3.pdf'},
+    {id: 'td3', type: 'TD', n: 2, title: 'Raconter avec une carte : QGIS, GeoPandas, Bokeh', status: 'soon',
+      gist: 'Partie 1 : couches, jointure, tampon, mise en page dans QGIS. Partie 2 : la même chaîne en code, résultats électoraux et carte interactive.', from: 'td3-intro.pdf, td3.zip, GeoPandas.ipynb'},
+    {id: 'cm4', type: 'CM', n: 4, title: 'D3.js pour le data storytelling', status: 'soon',
+      gist: 'Quand aucune bibliothèque ne raconte ce que vous voulez : le graphique sur mesure pour le web.', from: 'nouveau'},
+    {id: 'td-d3', type: 'TD', n: 3, title: 'Un récit en D3.js', status: 'soon',
+      gist: 'SVG, échelles, axes, survol : un graphique construit à la main.', from: 'nouveau'},
+    {id: 'cm5', type: 'CM', n: 5, title: 'Dashboards : no-code et code', status: 'soon',
+      gist: 'État, logique, vues ; ce que le no-code cache, et quand il suffit.', from: 'cm4.pptx'},
+    {id: 'td-dash', type: 'TD', n: 4, title: 'Un dashboard, sans code puis en code', status: 'soon',
+      gist: 'Trois paramètres directeurs, des vues liées, deux chemins.', from: 'nouveau'},
+    {id: 'td2', type: 'TD', n: 'extra', title: 'Visualisations interactives avec Bokeh', status: 'ready',
+      gist: 'En plus du programme : survol, zoom, curseurs, à votre rythme.', from: 'bokeh.ipynb'}
   ]
 };

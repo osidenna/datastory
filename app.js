@@ -7,19 +7,21 @@
   const app = document.getElementById('app'), bar = document.querySelector('.progress');
   const esc = window.Kit.esc;
   const PROF = /(^|[?&])prof\b/.test(location.search);
+  const isExtra = s => s.n === 'extra';
 
   function home() {
     document.title = S.short + ' · ' + S.program;
     bar.style.width = '0';
     const counts = {CM: 0, TD: 0};
-    S.sessions.forEach(s => counts[s.type]++);
+    const prog = S.sessions.filter(s => !isExtra(s)), extras = S.sessions.length - prog.length;
+    prog.forEach(s => counts[s.type]++);
     app.innerHTML = '<main class="home">' +
       '<section class="home-hero"><div><h1>' + S.title + '</h1>' +
       '<p>Transformer une analyse en un message que l’on voit, que l’on comprend et que l’on retient. Sur des données mauritaniennes réelles.</p>' +
-      '<p class="home-meta">' + esc(S.teacher) + ' · ' + S.program + ' · ' + S.edition + ' · ' + S.sessions.length + '&nbsp;séances de 1&nbsp;h&nbsp;30</p></div></section>' +
-      '<div class="legend-types"><span><span class="badge badge-CM">CM</span> cours (' + counts.CM + ')</span><span><span class="badge badge-TD">TD</span> travaux dirigés (' + counts.TD + ')</span></div>' +
+      '<p class="home-meta">' + esc(S.teacher) + ' · ' + S.program + ' · ' + S.edition + ' · ' + prog.length + '&nbsp;séances de 1&nbsp;h&nbsp;30</p></div></section>' +
+      '<div class="legend-types"><span><span class="badge badge-CM">CM</span> cours (' + counts.CM + ')</span><span><span class="badge badge-TD">TD</span> travaux dirigés (' + counts.TD + (extras ? ' + ' + extras + ' extra' : '') + ')</span></div>' +
       '<ol class="plan">' + S.sessions.map((s, i) => {
-        const inner = '<span class="plan-num">' + (i + 1) + '</span><span class="badge badge-' + s.type + '">' + s.type + ' ' + s.n + '</span>' +
+        const inner = '<span class="plan-num">' + (isExtra(s) ? '+' : i + 1) + '</span><span class="badge badge-' + s.type + '">' + s.type + ' ' + s.n + '</span>' +
           '<span><span class="plan-title">' + s.title + '</span><span class="plan-gist">' + s.gist + '</span></span>' +
           '<span class="plan-status ' + s.status + '">' + (s.status === 'ready' ? 'Ouvrir →' : 'À venir') + '</span>';
         return '<li class="' + s.status + '">' + (s.status === 'ready' && has(s.id) ? '<a href="#/' + s.id + '">' + inner + '</a>' : '<div class="plan-row">' + inner + '</div>') + '</li>';
@@ -35,7 +37,7 @@
   function foot(les, ses) {
     const k = S.sessions.indexOf(ses), nx = S.sessions[k + 1], pv = S.sessions[k - 1];
     const card = (s, dir) => !s ? '<span></span>' : (has(s.id) && s.status === 'ready'
-      ? '<a class="nav-card ' + dir + '" href="#/' + s.id + '"><small>' + (dir === 'next' ? 'Séance suivante →' : '← Séance précédente') + '</small><b>' + s.type + ' ' + s.n + ' · ' + s.title + '</b></a>'
+      ? '<a class="nav-card ' + dir + '" href="#/' + s.id + '"><small>' + (dir === 'next' ? (isExtra(s) ? 'En plus →' : 'Séance suivante →') : '← Séance précédente') + '</small><b>' + s.type + ' ' + s.n + ' · ' + s.title + '</b></a>'
       : '<div class="nav-card ' + dir + ' soon"><small>' + (dir === 'next' ? 'Séance suivante' : 'Séance précédente') + ' · à venir</small><b>' + s.type + ' ' + s.n + ' · ' + s.title + '</b></div>');
     return '<footer class="lesson-foot" hidden>' + (les.footer || '') + '<div class="nav-cards">' + card(pv, 'prev') + card(nx, 'next') + '</div></footer>';
   }
@@ -137,7 +139,8 @@
     window.scrollTo(0, 0);
   }
 
-  // TD : les solutions (fichier <id>-solutions.js) n'existent que dans la copie de l'enseignante.
+  // TD : la correction publiée (<id>-correction.js) n'existe que pour les TD terminés ; les solutions
+  // (<id>-solutions.js) n'existent que dans la copie de l'enseignante.
   const solTried = {};
   function td(id) {
     const ses = S.sessions.find(s => s.id === id);
@@ -148,7 +151,11 @@
     const s = document.createElement('script');
     s.src = id + '-solutions.js?v=' + Date.now();
     s.onload = go; s.onerror = go;
-    document.head.appendChild(s);
+    if (!T[id].correctionPublique) return document.head.appendChild(s);
+    const c = document.createElement('script');
+    c.src = id + '-correction.js?v=' + Date.now();
+    c.onload = c.onerror = () => document.head.appendChild(s);
+    document.head.appendChild(c);
   }
 
   function route() {
