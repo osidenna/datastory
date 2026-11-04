@@ -14,7 +14,7 @@ window.DS_SYLLABUS = {
       gist: 'Un même graphique, trois bibliothèques, trois philosophies.', from: 'td1.ipynb'},
     {id: 'cm2', type: 'CM', n: 2, title: 'Formes de visualisation et principes d’efficacité', status: 'ready',
       gist: 'Choisir le bon graphique, data-ink, Gestalt, couleur.', from: 'lecture2.pdf'},
-    {id: 'cm3', type: 'CM', n: 3, title: 'Le SIG comme outil de storytelling', status: 'soon',
+    {id: 'cm3', type: 'CM', n: 3, title: 'Le SIG comme outil de storytelling', status: 'ready',
       gist: 'Vecteurs, rasters, projections, composition, cartogrammes.', from: 'cm3.pdf'},
     {id: 'td3', type: 'TD', n: 2, title: 'Raconter avec une carte : QGIS, GeoPandas, Bokeh', status: 'ready',
       gist: 'Partie 1 : couches, jointure, tampon, mise en page dans QGIS. Partie 2 : la même chaîne en code, résultats électoraux et carte interactive.', from: 'td3-intro.pdf, td3.zip, GeoPandas.ipynb'},
