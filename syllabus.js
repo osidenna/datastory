@@ -16,7 +16,7 @@ window.DS_SYLLABUS = {
       gist: 'Choisir le bon graphique, data-ink, Gestalt, couleur.', from: 'lecture2.pdf'},
     {id: 'cm3', type: 'CM', n: 3, title: 'Le SIG comme outil de storytelling', status: 'soon',
       gist: 'Vecteurs, rasters, projections, composition, cartogrammes.', from: 'cm3.pdf'},
-    {id: 'td3', type: 'TD', n: 2, title: 'Raconter avec une carte : QGIS, GeoPandas, Bokeh', status: 'soon',
+    {id: 'td3', type: 'TD', n: 2, title: 'Raconter avec une carte : QGIS, GeoPandas, Bokeh', status: 'ready',
       gist: 'Partie 1 : couches, jointure, tampon, mise en page dans QGIS. Partie 2 : la même chaîne en code, résultats électoraux et carte interactive.', from: 'td3-intro.pdf, td3.zip, GeoPandas.ipynb'},
     {id: 'cm4', type: 'CM', n: 4, title: 'D3.js pour le data storytelling', status: 'soon',
       gist: 'Quand aucune bibliothèque ne raconte ce que vous voulez : le graphique sur mesure pour le web.', from: 'nouveau'},
