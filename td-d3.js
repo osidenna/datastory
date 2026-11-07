@@ -15,17 +15,17 @@
   const PROMPT = 'Voici un graphique (capture jointe) et le code D3 qui le produit. Applique le skill roast-my-chart : décris d’abord le graphique, vérifie toutes les fiches de caveats.md, puis classe les problèmes du plus grave au moins grave. Réponds en français. Ne réécris pas mon code : je corrige moi-même.';
 
   const K = A + 'kit/td3-kit.zip';
-  const P_AVANT = 'Voici un fichier CSV de restaurants de Nouakchott (colonnes : nom, type, categorie, ville, note, nb_avis, lat, lng, actualise, ferme). Écris le fichier main.js d’un graphique D3 v7 en barres : les 10 meilleurs restaurants de Nouakchott. Le fichier est data/restaurants.csv, d3 est déjà chargé, dessine dans l’élément #chart.';
-  const P_INSPI = 'Applique le skill inspiration avant d’écrire du code. Mon but : montrer aux habitants de Nouakchott quels restaurants sont vraiment bien notés, sachant que beaucoup n’ont que quelques avis. Propose 3 à 5 graphiques publiés, avec leurs liens, qui classent des éléments en tenant compte du nombre d’avis. Réponds en français.';
-  const P_D3 = 'Applique le skill d3. Réécris main.js (D3 v7 déjà chargé, data/restaurants.csv, élément #chart, sans React) pour le graphique que j’ai choisi : [décrivez-le]. Le titre dit le message ; la source est écrite sous le graphique. Réponds en français et explique chaque bloc du code.';
+  const P_AVANT = "À partir de data/restaurants.csv, écris avant.js pour un top 10 par note, sans autre critère. D3 v7 est déjà chargé. Sélectionne #chart avec document.querySelector et garde le module compatible avec await.";
+  const P_INSPI = "Mon lecteur veut une sélection de restaurants expliquée. Trouve 3 à 5 exemples publiés qui comparent une note et son nombre d’avis ou montrent qui sort d’un filtre. Donne les liens et une idée à reprendre pour chaque exemple.";
+  const P_D3 = "Écris apres.js à partir de data/restaurants.csv pour la règle que je viens de définir. D3 v7 est déjà chargé ; utilise #chart. Montre les exclusions, le nombre d’avis et le classement. Ajoute un survol et une transition quand la règle change. N’invente ni avis individuels ni intervalle de confiance.";
 
   window.DS_TD = window.DS_TD || {};
   window.DS_TD['td-d3'] = {
     id: 'td-d3',
     title: 'Un récit en D3.js',
-    lede: 'Un graphique sur les prêts d’une bibliothèque de Nouakchott, deux vues liées dans React, puis les restaurants de Nouakchott, avant et après les skills de Yan Holtz. Tout s’écrit dans VS Code, le navigateur ouvert à côté.',
+    lede: 'Survolez et comparez des graphiques sur les prêts d’une bibliothèque, puis construisez une sélection de restaurants que votre lecteur peut vérifier. Les exemples fonctionnent dans la page ; vos cellules se modifient dans VS Code.',
     model: '<span>Données</span><i>→</i><span>Échelles</span><i>→</i><span>Formes</span><i>→</i><span>Axes</span><i>→</i><span>Message</span><i>→</i><span>Relecture</span>',
-    howto: '<div class="d4-route"><p class="d4-tag">Votre parcours</p><ol><li><b>Préparer</b><span>VS Code, Live Server, le kit : le navigateur suit votre code.</span></li><li><b>Construire</b><span>Rectangles → échelles → message.</span></li><li><b>Relire</b><span>Corriger deux défauts et justifier.</span></li><li><b>Relier</b><span>Une année, un total et des barres.</span></li><li><b>Restaurants</b><span>Avant et après les skills de Yan Holtz, puis l’interaction.</span></li></ol><p class="small">Objectif : pouvoir expliquer votre code et votre choix visuel. La ligne, le pictogramme et les autres défis sont des ateliers complémentaires.</p></div>' +
+    howto: '<div class="d4-route"><p class="d4-tag">Votre parcours</p><ol><li><b>Préparer</b><span>VS Code, Live Server, le kit : le navigateur suit votre code.</span></li><li><b>Construire</b><span>Rectangles → échelles → message.</span></li><li><b>Relire</b><span>Corriger deux défauts et justifier.</span></li><li><b>Relier</b><span>Une année, un total et des barres.</span></li><li><b>Restaurants</b><span>Un classement, ses preuves, puis votre règle de sélection.</span></li></ol><p class="small">Objectif : pouvoir expliquer votre code et votre choix visuel. La ligne, le pictogramme et les autres défis sont des ateliers complémentaires.</p></div>' +
       '<div class="mascot-note mascot-note-dog">' + window.Mascots.mascot('dog') + '<div class="mascot-note-text">' +
       '<p><b>Vous écrivez dans VS Code ; cette page donne les consignes et vérifie.</b> Chaque cellule est du JavaScript, avec quatre noms prêts, ici comme dans le kit : <code>d3</code> (D3 v7), <code>chart</code> (le cadre où dessiner), <code>React</code> et <code>ReactDOM</code>. Dans la page, <b>Exécuter</b> affiche le graphique, les <code>console.log</code> et les coches vertes.</p></div></div>' +
       '<p class="small">Données : bibliothèque associative <a href="https://iqraama3i.org/" target="_blank" rel="noopener">Iqraa Ma3i</a>, Nouakchott, janvier 2024 – 17 octobre 2026, anonymisées (<a href="https://www.kaggle.com/datasets/iqramaee/iqra-maee-library-mauritania-20242026" target="_blank" rel="noopener">Kaggle</a>, CC BY 4.0). Fichiers agrégés du TD : ' +
@@ -170,32 +170,74 @@ zone.selectAll("rect").data(top).join("rect")
       },
       {
         id: 'message', title: 'Un titre qui dit quelque chose',
-        lead: 'Les romans sont les plus prêtés. Mais rapporté au nombre de livres en rayon ? Calculez, triez, et dites-le dans le titre.',
+        lead: 'Les romans dominent en volume. Est-ce encore vrai si chaque catégorie est rapportée à son stock ?',
         parts: [
+          {demo: {id: 'library-rank', build: window.DS_TD_DEMOS.library}},
           {phase: 'Prédire'},
           {ask: '<b>Par livre en rayon</b> (prêts ÷ livres), quelle catégorie arrive en tête ? Notez votre réponse.'},
           {phase: 'Faire', ai: 'hint'},
           {steps: [
-            'Reprenez les échelles, les barres et les axes de l’exercice « Échelles et axes » : vous améliorez le même graphique, sans tout réécrire.',
-            'Ajoutez à chaque catégorie <code>d.parLivre = d.prets / d.livres</code>.',
-            'Gardez les catégories d’<b>au moins 30 livres</b> : un ratio sur 21 livres ne veut pas dire grand-chose.',
-            'Triez du plus grand au plus petit (<code>d3.descending</code>) et gardez les 12 premières.',
-            'Barres grises, <b>les deux premières en mauve</b>. Étiquettes des catégories à gauche, valeur au bout de chaque barre.',
-            'Un <b>titre-phrase</b> au-dessus : le message, pas le sujet.'
+            'Survolez une barre, puis changez de mesure dans l’exemple. Suivez les mêmes catégories pendant le reclassement.',
+            'Dans la cellule, calculez <code>parLivre = prets / livres</code>. Les 12 catégories les plus prêtées parmi celles d’au moins 30 livres restent les mêmes.',
+            'Ouvrez sur <code>parLivre</code>. Donnez un titre qui change avec la mesure et colorez les deux premières catégories.',
+            'Repérez la clé <code>d.categorie</code> dans <code>.data()</code> et la <code>.transition()</code>. La clé permet de suivre la même barre ; le mouvement montre son nouveau rang.'
           ]},
-          {cell: {id: 'd-message', js: true, code: `const cats = await d3.csv("data/categories.csv", d3.autoType);
+          {cell: {id: 'd-message', js: true, wait: 700, code: `const cats = await d3.csv("data/categories.csv", d3.autoType);
+const data = cats.filter(d => d.livres >= 30).sort((a, b) => b.prets - a.prets).slice(0, 12)
+  .map(d => ({...d, parLivre: 0 // À vous : calculez prêts ÷ livres
+  }));
+let metrique = "prets"; // À vous : ouvrez sur « parLivre » après le calcul
+const couleur = (d, i) => "#d9dce2"; // À vous : colorez les deux premières
+const titre = () => "Prêts par catégorie"; // À vous : un titre-phrase pour chaque mesure
 
-// 1. Le ratio, le filtre, le tri, les 12 premières
-const data = cats;
+const L = 680, H = 430, M = {haut: 60, droite: 50, bas: 35, gauche: 190};
+const largeur = L - M.gauche - M.droite, hauteur = H - M.haut - M.bas;
+const duree = matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 600;
+const commandes = d3.select(chart).append("div");
+const boutons = commandes.selectAll("button").data(["prets", "parLivre"]).join("button")
+  .attr("type", "button").text(d => d === "prets" ? "Nombre de prêts" : "Prêts par livre en rayon");
+const svg = d3.select(chart).append("svg").attr("viewBox", "0 0 " + L + " " + H);
+const zone = svg.append("g").attr("transform", "translate(" + M.gauche + "," + M.haut + ")");
+const lignes = zone.append("g"), axe = zone.append("g").attr("transform", "translate(0," + hauteur + ")");
+const entete = svg.append("text").attr("x", 4).attr("y", 24).attr("font-size", 16).attr("font-weight", 700);
+svg.append("text").attr("x", 4).attr("y", 44).attr("font-size", 11)
+  .text("Même périmètre : 12 catégories, au moins 30 livres ; philosophie et psychologie : 67 livres.");
+const detail = d3.select(chart).append("p").attr("class", "story-live-detail")
+  .text("Survolez une barre pour lire ce que la longueur résume.");
 
-const MARGE = {haut: 60, droite: 50, bas: 10, gauche: 190};
-const L = 680, H = 430;
-const largeur = L - MARGE.gauche - MARGE.droite, hauteur = H - MARGE.haut - MARGE.bas;
-const zone = d3.select(chart).append("svg").attr("viewBox", \`0 0 \${L} \${H}\`)
-  .append("g").attr("transform", \`translate(\${MARGE.gauche},\${MARGE.haut})\`);
-
-// 2. Échelles, barres, couleurs, étiquettes, titre
-`,
+function dessiner(premier = false) {
+  const ordre = data.slice().sort((a, b) => d3.descending(a[metrique], b[metrique]));
+  const x = d3.scaleLinear().domain([0, d3.max(ordre, d => d[metrique]) || 1]).range([0, largeur]);
+  const y = d3.scaleBand().domain(ordre.map(d => d.categorie)).range([0, hauteur]).padding(0.2);
+  const groupes = lignes.selectAll("g.categorie").data(ordre, d => d.categorie).join(entree => {
+    const g = entree.append("g").attr("class", "categorie").attr("transform", d => "translate(0," + y(d.categorie) + ")");
+    g.append("rect").attr("width", 0);
+    g.append("text").attr("class", "nom").attr("x", -8).attr("text-anchor", "end").attr("font-size", 12);
+    g.append("text").attr("class", "val").attr("font-size", 12);
+    return g;
+  });
+  groupes.on("pointerenter", (e, d) => {
+    groupes.style("opacity", r => r.categorie === d.categorie ? 1 : 0.3);
+    detail.text(d.categorie + " : " + d.prets + " prêts / " + d.livres + " livres = " +
+      d.parLivre.toLocaleString("fr-FR", {maximumFractionDigits: 2}) + " prêt(s) par livre.");
+  }).on("pointerleave", () => {
+    groupes.style("opacity", 1); detail.text("Survolez une barre pour lire ce que la longueur résume.");
+  });
+  groupes.select("rect").attr("height", y.bandwidth()).attr("fill", couleur);
+  groupes.select(".nom").attr("y", y.bandwidth() / 2 + 4).text(d => d.categorie);
+  groupes.select(".val").attr("y", y.bandwidth() / 2 + 4)
+    .text(d => d[metrique].toLocaleString("fr-FR", {maximumFractionDigits: 2}));
+  // La clé conserve chaque catégorie ; la transition montre son nouveau rang et sa longueur.
+  const ms = premier ? 0 : duree;
+  groupes.interrupt().transition().duration(ms).attr("transform", d => "translate(0," + y(d.categorie) + ")");
+  groupes.select("rect").interrupt().transition().duration(ms).attr("width", d => x(d[metrique]));
+  groupes.select(".val").interrupt().transition().duration(ms).attr("x", d => x(d[metrique]) + 5);
+  axe.interrupt().transition().duration(ms).call(d3.axisBottom(x).ticks(5));
+  entete.text(titre());
+  boutons.attr("aria-pressed", d => String(d === metrique));
+}
+boutons.on("click", (e, valeur) => { metrique = valeur; dessiner(); });
+dessiner(true);`,
             check: c => {
               const r = Q(c, 'rect'), ys = r.map(e => num(e, 'y')), w = r.map(e => num(e, 'width'));
               const top = r[ys.indexOf(Math.min(...ys))], t = Q(c, 'text').map(e => e.textContent);
@@ -204,7 +246,8 @@ const zone = d3.select(chart).append("svg").attr("viewBox", \`0 0 \${L} \${H}\`)
                 [r.length > 0 && num(top, 'width') === Math.max(...w), 'Triées : la plus longue en haut'],
                 [r.filter(MAUVE).length === 2, 'Deux barres en mauve, les autres non'],
                 [t.some(s => /philosophie/i.test(s)), 'Philosophie et psychologie apparaît'],
-                [t.some(s => s.length >= 30), 'Un titre-phrase (au moins 30 caractères)']
+                [t.some(s => s.length >= 30), 'Un titre-phrase (au moins 30 caractères)'],
+                [Q(c, '.val').some(e => /^1[,.]46$/.test(e.textContent.trim())), 'Le rapport de philosophie et psychologie atteint 1,46 prêt par livre']
               ];
             }}},
           {note: 'Un ratio change le récit : en nombre, les romans écrasent tout ; par livre en rayon, la philosophie et la psychologie passent devant. Mais 67 livres seulement : écrivez-le en sous-titre.', mascot: 'lion'}
@@ -377,50 +420,53 @@ const svg = d3.select(chart).append("svg").attr("viewBox", "0 0 680 460");
           {ask: 'Avant d’exécuter : le code contient <code>const annee = 2024</code>. Un clic sur 2026 suffit-il à changer cette valeur ? Repérez les trois lignes à compléter.'},
           {phase: 'Faire', ai: 'hint'},
           {steps: [
-            'Exécutez : les barres et leurs noms sont fournis. Les trois boutons n’agissent pas encore. Repérez les composants <code>Tableau</code>, <code>Barres</code> et <code>Total</code>.',
+            'Exécutez et survolez une barre : son détail est déjà fourni. Le survol vit dans <code>Barres</code> ; l’année doit vivre dans le parent <code>Tableau</code>.',
             'Dans <code>Tableau</code>, remplacez la constante par un état avec <code>useState(2024)</code>. Reliez chaque bouton à son setter.',
             'Dans <code>Total</code>, calculez les prêts des <b>8 catégories affichées</b> pour l’année reçue en prop. Ce total ne représente pas toute la bibliothèque.',
-            'Prédisez le résultat pour 2025, puis cliquez : le titre, le total et les barres doivent suivre. Gardez la même échelle entre les années. Attention : 2026 s’arrête le 17 octobre.'
+            'Prédisez le résultat pour 2025, puis cliquez : titre et total suivent ; les largeurs s’animent sur la même échelle. Pourquoi une échelle fixe aide-t-elle à comparer ? 2026 s’arrête le 17 octobre.'
           ]},
           {cell: {id: 'd-react', js: true, wait: 400, code: `const cats = (await d3.csv("data/categories.csv", d3.autoType)).slice(0, 8);
-const h = React.createElement;          // h("rect", {...}) = <rect ... />
+const h = React.createElement;
 const {useState} = React;
 const ANNEES = [2024, 2025, 2026];
-// Une échelle commune : les longueurs restent comparables entre années.
 const maximum = d3.max(cats, d => d3.max(ANNEES, a => d["prets_" + a]));
+const mouvement = matchMedia("(prefers-reduced-motion: reduce)").matches ? "none" : "width 600ms ease";
 
 function Barres({annee}) {
+  // Le survol est local à cette vue ; l’année commune reste dans Tableau.
+  const [survol, setSurvol] = useState(null);
   const cle = "prets_" + annee;
-  // D3 calcule…
   const x = d3.scaleLinear().domain([0, maximum]).range([0, 400]);
   const y = d3.scaleBand().domain(cats.map(d => d.categorie)).range([0, 260]).padding(0.2);
-  // … React dessine
-  return h("svg", {viewBox: "0 0 680 300", fontSize: 12, fontFamily: "sans-serif"},
-    h("g", {transform: "translate(200,20)"},
-      cats.map(d => h("g", {key: d.categorie},
-        h("rect", {y: y(d.categorie), height: y.bandwidth(), width: x(d[cle]), fill: "#d9dce2"}),
-        h("text", {x: -8, y: y(d.categorie) + 14, textAnchor: "end"}, d.categorie)))
-    ));
+  const choisie = cats.find(d => d.categorie === survol);
+  return h("div", null,
+    h("svg", {viewBox: "0 0 680 300", fontSize: 12, fontFamily: "sans-serif"},
+      h("g", {transform: "translate(200,20)"},
+        cats.map(d => h("g", {key: d.categorie,
+          onPointerEnter: () => setSurvol(d.categorie), onPointerLeave: () => setSurvol(null),
+          style: {opacity: survol && survol !== d.categorie ? 0.3 : 1, transition: "opacity 150ms"}},
+          h("rect", {className: "story-react-bar", y: y(d.categorie), height: y.bandwidth(), width: x(d[cle]),
+            style: {width: x(d[cle]) + "px", transition: mouvement}, fill: d.categorie === "Romans" ? "#8a4f8c" : "#d9dce2"}),
+          h("text", {x: -8, y: y(d.categorie) + 14, textAnchor: "end"}, d.categorie),
+          h("text", {x: x(d[cle]) + 6, y: y(d.categorie) + 14}, d[cle]))))),
+    h("p", {className: "story-live-detail", "aria-live": "polite"}, choisie
+      ? choisie.categorie + " : " + choisie[cle] + " prêts en " + annee + ", pour " + choisie.livres + " livres au catalogue."
+      : "Survolez une barre ; changez d’année pour suivre les longueurs."));
 }
-
 function Total({annee}) {
-  const total = 0;                      // 1. à vous : somme des prêts de l’année
+  const total = 0; // 1. À vous : somme des prêts de l’année
   return h("p", null, total + " prêts dans ces 8 catégories");
 }
-
 function Tableau() {
-  const annee = 2024;                   // 2. à vous : un état avec useState
+  const annee = 2024; // 2. À vous : un état partagé
   return h("div", null,
-    ANNEES.map(a => h("button", {key: a, onClick: () => {}}, a)), // 3. le setter
+    ANNEES.map(a => h("button", {key: a, "aria-pressed": a === annee, onClick: () => {} /* 3. À vous : appeler le setter */}, a)),
     h("p", null, "Prêts par catégorie en " + annee + (annee === 2026 ? " (jusqu’au 17 octobre)" : "")),
-    h(Total, {annee}),
-    h(Barres, {annee}));
+    h(Total, {annee}), h(Barres, {annee}));
 }
-
-ReactDOM.createRoot(chart).render(h(Tableau));
-`,
+ReactDOM.createRoot(chart).render(h(Tableau));`,
             check: (c, code) => [
-              [/useState\s*\(/.test(code), 'Un état avec useState'],
+              [/\b(?:const|let)\s*\[\s*annee\s*,\s*setAnnee\s*\]\s*=\s*useState\s*\(/.test(code), 'L’année est un état dans le composant parent'],
               [!/d3\.select|\.append\(|\.attr\(/.test(code), 'React dessine : aucun d3.select, .append, .attr'],
               [Q(c, 'button').length >= 3, 'Trois boutons d’année'],
               [Q(c, 'svg rect').length >= 8, '8 barres'],
@@ -485,18 +531,19 @@ console.log("Prêts rendus :", d3.sum(durees, d => d.prets));
         ]
       },
       {
-        id: 'avant', title: 'Avant les skills : le premier jet',
-        lead: 'Demandez à une IA, <b>sans skill</b>, « les 10 meilleurs restaurants de Nouakchott ». Regardez ce qu’elle fait.',
+        id: 'avant', title: 'Le piège des cinq étoiles',
+        lead: 'Vous préparez un guide de Nouakchott. Une adresse a 5,0 : que devez-vous savoir avant de la mettre en tête ?',
         parts: [
-          {phase: 'Demander', ai: 'on'},
-          {p: 'Nouvelle conversation, sans skill. Joignez <code>data/restaurants.csv</code> (ou collez ses 20 premières lignes) avec cette demande :'},
+          {demo: {id: 'restaurant-story', build: window.DS_TD_DEMOS.restaurants}},
+          {ask: 'Dans « La promesse », choisissez une adresse. Ouvrez « Les preuves », puis « Votre règle ». La gardez-vous ? Donnez le chiffre et le critère qui ont changé votre choix.'},
+          {phase: 'Faire le premier jet', ai: 'on'},
+          {p: 'Demandez à une IA, sans skill, un top 10 par note à partir de <code>data/restaurants.csv</code>. Gardez le premier jet comme point de comparaison.'},
           {html: '<p class="td-prompt">' + P_AVANT + '</p>'},
           {steps: [
-            'Dans VS Code, créez <code>avant.js</code> et collez-y la réponse.',
-            'Dans <code>index.html</code>, remplacez <code>main.js</code> par <code>avant.js</code>, enregistrez, rechargez.',
-            'Faites une capture : <code>avant.png</code>. Ne corrigez rien : c’est le « avant ».'
+            'Enregistrez le premier jet dans <code>avant.js</code>. Dans <code>index.html</code>, chargez ce fichier à la place de <code>main.js</code>, en gardant <code>type="module"</code>.',
+            'Exécutez la cellule ci-dessous si vous n’utilisez pas d’IA. Ajoutez une étiquette <code>d.nb_avis</code> au bout de chaque barre pour vérifier la comparaison.',
+            'Gardez une capture <code>avant.png</code> et notez un choix que ce classement ne permet pas de défendre.'
           ]},
-          {p: 'Pas d’IA sous la main ? Voici le graphique que donnent la plupart des assistants. Exécutez-le.'},
           {cell: {id: 'd-avant', js: true, code: `// Le premier jet typique : trier par note, garder les 10 premiers
 const restos = await d3.csv("data/restaurants.csv", d3.autoType);
 const top = restos.filter(d => d.note).sort((a, b) => b.note - a.note).slice(0, 10);
@@ -514,82 +561,167 @@ svg.append("g").selectAll("rect").data(top).join("rect")
   .attr("fill", (d, i) => d3.schemeTableau10[i]);
 svg.append("g").attr("transform", \`translate(\${M.gauche},0)\`).call(d3.axisLeft(y));
 // À vous : ajoutez le nombre d'avis au bout de chaque barre (d.nb_avis)`,
-            check: c => {
-              const t = Q(c, 'text').map(e => e.textContent).join(' ');
-              return [[Q(c, 'rect').length === 10, '10 barres'], [Q(c, 'text').filter(e => /^\D{0,3}\d+\D{0,6}$/.test(e.textContent.trim())).length >= 10, 'Le nombre d’avis écrit au bout de chaque barre']];
-            }}},
-          {ask: 'Les dix ont 5,0. Combien d’avis chacun ? Et pourquoi ces dix-là : combien de lieux ont 5,0 en tout ? (<code>restos.filter(d => d.note === 5).length</code>)'},
-          {details: 'Ce que montrent les données', body: '<p>Cinq des dix n’ont qu’<b>un seul avis</b>. Et <b>57</b> lieux ont 5,0 : à égalité, le tri garde les dix premiers du fichier, rangé par ordre alphabétique. Le « classement » est l’alphabet.</p><p><b>55</b> de ces 57 lieux ont moins de 10 avis (le plus suivi en a 21). Le lieu noté médian a <b>6 avis</b>. Trier par note, c’est presque trier par hasard : avec trois avis, un 5,0 est facile. Parmi les 44 lieux qui ont au moins 50 avis, les mieux notés ont 4,6 : The India Gate (251 avis) et Café Phoenix (63).</p><p>Autres défauts fréquents du premier jet : dix couleurs sans signification, un titre qui affirme sans dire sur quoi, pas de source, 88 lieux sans note ignorés en silence, des cafés et des pâtisseries mêlés aux restaurants (colonne <code>type</code>).</p>'}
+            check: c => [
+              [Q(c, 'rect').length === 10, '10 barres'],
+              [Q(c, 'text').filter(e => /^\D{0,3}\d+\D{0,6}$/.test(e.textContent.trim())).length >= 10, 'Le nombre d’avis écrit au bout de chaque barre']
+            ]}},
+          {details: 'Le constat à vérifier', body: '<p>57 lieux sont à 5,0. Parmi les dix affichés, six n’ont qu’un avis et neuf en ont moins de dix. Le tri par note ne départage pas les ex aequo : le fichier fournit l’ordre.</p>'}
         ]
       },
       {
-        id: 'apres', title: 'Après les skills : chercher, construire, relire',
-        lead: 'Même demande, mais l’IA suit trois skills de Yan Holtz, dans l’ordre : <b>inspiration</b>, <b>d3</b>, <b>roast-my-chart</b>.',
+        id: 'apres', title: 'Construire une sélection que l’on peut défendre',
+        lead: 'Le lecteur veut comparer des restaurants identifiés. Dites quelles fiches vous retenez, et où passent les autres.',
         parts: [
-          {phase: 'Préparer', ai: 'on'},
-          {p: 'Deux voies, comme dans la partie 2. <b>A. Chat</b> (ChatGPT, Gemini, Mistral, Claude) : nouvelle conversation, collez le SKILL.md de chaque skill au moment où vous l’utilisez. <b>B. Agent dans l’éditeur</b> (Claude Code, Codex, Copilot en mode agent, Cursor) : dans le terminal de VS Code, dans le dossier du kit, installez les skills une fois (Node.js requis) :'},
-          {html: '<pre class="d4-code">npx skills add holtzy/dataviz-skills</pre>'},
+          {phase: 'Définir une règle'},
+          {ask: 'Que reste-t-il si vous gardez les restaurants identifiés, écartez les fiches signalées fermées et exigez au moins 50 avis ? Prédisez avant d’exécuter.'},
+          {phase: 'Transformer les données', ai: 'hint'},
           {steps: [
-            {t: '<b>Chercher</b> · skill <a href="' + SK + 'inspiration/SKILL.md" target="_blank" rel="noopener">inspiration</a>. Demandez :<p class="td-prompt">' + P_INSPI + '</p>'},
-            {t: '<b>Construire</b> · skill <a href="' + SK + 'd3/SKILL.md" target="_blank" rel="noopener">d3</a>. Demandez, puis enregistrez la réponse dans <code>apres.js</code> et chargez-la dans <code>index.html</code> :<p class="td-prompt">' + P_D3 + '</p>'},
-            {t: '<b>Relire</b> · skill <a href="' + SK + 'roast-my-chart/SKILL.md" target="_blank" rel="noopener">roast-my-chart</a> (avec <code>caveats.md</code>). Envoyez la capture <code>apres.png</code>, le code, et la consigne de la partie 2. Corrigez vous-même les deux problèmes les plus graves.'}
+            'Complétez <code>perimetre</code> : gardez <code>type === "restaurant"</code>. Un type inconnu reste inconnu.',
+            'Complétez <code>exploitables</code> : retirez les fiches signalées fermées, puis celles sans note ou sans avis. Gardez les deux nombres séparés.',
+            'Complétez <code>retenus</code> avec <code>nb_avis &gt;= minimum</code>. Vérifiez : périmètre = fermées + sans note + sous le seuil + retenues.',
+            'Triez d’abord par note décroissante, puis par nombre d’avis décroissant en cas d’égalité. Affichez huit adresses, mais gardez le décompte de toutes les fiches retenues.'
           ]},
-          {note: 'Ne dites pas à l’IA quel est le piège. Si elle le trouve grâce aux skills, la méthode a marché. Sinon, c’est vous qui le trouvez : le nombre d’avis, la source, les restaurants sans note.', mascot: 'cat'},
-          {phase: 'Comparer'},
-          {p: 'Recopiez ce tableau dans un fichier <code>notes.md</code> du kit, et remplissez-le en regardant <code>avant.png</code> et <code>apres.png</code> côte à côte.'},
-          {html: '<table class="data d4-cmp"><thead><tr><th></th><th>Avant</th><th>Après</th></tr></thead><tbody>' +
-            ['Ce que dit le titre', 'Ce qui est trié, et selon quoi', 'Le nombre d’avis est-il visible ?', 'Que deviennent les 88 lieux sans note ? Et les cafés ?', 'Couleurs : que signifient-elles ?', 'Source et date', 'Une remarque de l’IA que je refuse, et pourquoi']
-              .map(r => '<tr><td>' + r + '</td><td></td><td></td></tr>').join('') + '</tbody></table>'},
-          {note: 'Le skill ne rend pas l’IA plus intelligente : il l’oblige à suivre une méthode (chercher des références, poser les marges, vérifier 61 erreurs courantes). Le jugement reste le vôtre.', mascot: 'lion'}
-        ]
-      },
-      {
-        id: 'interagir', title: 'Laissez le lecteur vérifier',
-        lead: 'Comme au CM 4 : un <b>survol</b> pour les détails, un <b>filtre</b> pour poser sa propre question. Ici : « à partir de combien d’avis faites-vous confiance à une note ? »',
-        parts: [
-          {phase: 'Prédire'},
-          {ask: 'En abscisse le nombre d’avis (échelle log), en ordonnée la note. Où seront les 5,0 et les 1,0 : à gauche ou à droite ?'},
-          {phase: 'Faire', ai: 'hint'},
-          {steps: [
-            'Exécutez : un point par restaurant noté. La forme d’entonnoir répond à la question.',
-            '<b>Survol</b> : sur <code>pointerenter</code>, affichez une bulle avec le nom, la note et le nombre d’avis ; cachez-la sur <code>pointerleave</code>.',
-            '<b>Filtre</b> : un curseur « au moins <i>n</i> avis » (<code>&lt;input type="range"&gt;</code>, de 1 à 100). À chaque <code>input</code>, redessinez avec <code>.join()</code> et une clé : seuls les restaurants retenus restent.',
-            'Dans un coin du graphique, écrivez combien de restaurants il reste et qui est en tête. Puis reportez survol et filtre dans votre <code>apres.js</code>.'
-          ]},
-          {cell: {id: 'd-entonnoir', js: true, code: `const restos = (await d3.csv("data/restaurants.csv", d3.autoType))
-  .filter(d => d.note && d.nb_avis > 0);
+          {cell: {id: 'd-guide', js: true, code: `const lieux = await d3.csv("data/restaurants.csv", d3.autoType);
+const minimum = 50;   // Un choix éditorial à justifier, pas un niveau de confiance.
+const perimetre = lieux; // 1. Gardez uniquement le type restaurant
+const exploitables = perimetre; // 2. Retirez les fiches signalées fermées et celles sans note ou avis
+const retenus = exploitables; // 3. Appliquez le seuil d’avis
+const classement = retenus.slice(0, 8); // 4. Triez avant de limiter la liste
 
-const L = 680, H = 400, M = {haut: 30, droite: 20, bas: 40, gauche: 40};
+const fermees = perimetre.filter(d => d.ferme).length;
+const sansNote = perimetre.filter(d => !d.ferme && (d.note == null || d.nb_avis <= 0)).length;
+const sousSeuil = exploitables.filter(d => d.nb_avis < minimum).length;
+chart.classList.add("td-story");
+d3.select(chart).append("h3").text("Prototype : complétez la règle avant de publier");
+const bilan = d3.select(chart).append("div").attr("class", "story-ledger");
+[
+  ["Dans le périmètre", perimetre.length], ["Signalées fermées", fermees],
+  ["Sans note", sansNote], ["Sous le seuil", sousSeuil], ["Retenues", retenus.length]
+].forEach(([libelle, n]) => {
+  const caseBilan = bilan.append("div").attr("data-count", libelle);
+  caseBilan.append("b").text(n); caseBilan.append("span").text(libelle);
+});
+const tableau = d3.select(chart).append("table").style("width", "100%");
+tableau.append("thead").append("tr").selectAll("th")
+  .data(["Les huit premières adresses", "Note / 5", "Avis"]).join("th").text(d => d);
+const lignes = tableau.append("tbody").selectAll("tr").data(classement, d => [d.nom, d.lat, d.lng].join("|")).join("tr");
+lignes.append("td").text(d => d.nom);
+lignes.append("td").text(d => d.note == null ? "sans note" : d.note.toLocaleString("fr-FR", {minimumFractionDigits: 1}));
+lignes.append("td").text(d => d.nb_avis);
+d3.select(chart).append("p").attr("class", "story-source")
+  .text("Source : Google Maps, fusion du 7 novembre 2026. Tri : note, puis nombre d’avis. Périmètre : type restaurant, hors fiches signalées fermées. Ce filtre ne prouve pas la qualité du repas.");
+console.log("Contrôle :", fermees + sansNote + sousSeuil + retenus.length, "=", perimetre.length);`,
+            check: c => {
+              const n = key => Number(Q(c, '[data-count]').find(e => e.getAttribute('data-count') === key)?.querySelector('b')?.textContent);
+              return [
+                [n('Dans le périmètre') === 447, '447 fiches de type restaurant'],
+                [n('Signalées fermées') === 8 && n('Sans note') === 48, '8 fiches signalées fermées et 48 sans note comptées à part'],
+                [n('Sous le seuil') === 357 && n('Retenues') === 34, 'Le seuil de 50 avis laisse 34 fiches et en écarte 357'],
+                [n('Signalées fermées') + n('Sans note') + n('Sous le seuil') + n('Retenues') === n('Dans le périmètre'), 'Le décompte explique chaque exclusion'],
+                [Q(c, 'tbody tr').length === 8 && Q(c, 'tbody tr:first-child td:first-child')[0]?.textContent === 'The India Gate', 'Huit adresses ; la règle place The India Gate en tête']
+              ];
+            }}},
+          {phase: 'Relire le récit', ai: 'on'},
+          {details: 'Utiliser les trois skills sur votre sélection', body: '<ol><li><b>Inspiration.</b> Cherchez une référence qui montre ce qu’un filtre exclut : <a href="' + SK + 'inspiration/SKILL.md" target="_blank" rel="noopener">inspiration</a>.<p class="td-prompt">' + P_INSPI + '</p></li><li><b>Construire.</b> Donnez votre règle et vos chiffres à <a href="' + SK + 'd3/SKILL.md" target="_blank" rel="noopener">d3</a>.<p class="td-prompt">' + P_D3 + '</p></li><li><b>Relire.</b> Avec <a href="' + SK + 'roast-my-chart/SKILL.md" target="_blank" rel="noopener">roast-my-chart</a>, vérifiez le titre, les exclusions, les unités et la source. Corrigez vous-même deux défauts.</li></ol>'},
+          {note: 'Le seuil de 50 avis est un choix de rédaction. On peut compter les avis et comparer les moyennes ; le fichier ne donne pas leur dispersion ni la qualité réelle d’un repas.', mascot: 'lion'}
+        ]
+      },
+      {
+        id: 'interagir', title: 'Montrer ce que votre règle écarte',
+        lead: 'Le filtre devient une expérience : les points gris gardent le contexte, les points mauves suivent votre règle.',
+        parts: [
+          {phase: 'Manipuler'},
+          {steps: [
+            'Exécutez. Survolez un point pour lire le nom, la note et le nombre d’avis. Changez le seuil : les points changent de taille et de couleur sans perdre leur position.',
+            'Cliquez un point pour garder une adresse, puis passez de 10 à 50 et à 100 avis. Notez le nombre retenu et ce qui arrive à l’adresse choisie.',
+            'Dans <code>liste.selectAll("button")</code>, remplacez <code>data([], cle)</code> par les huit premières fiches de <code>retenus</code>. Cliquez une adresse : la fiche et le point doivent suivre la même sélection.',
+            'Ajoutez un titre qui dit ce que votre lecteur apprend. Indiquez le périmètre, le seuil et la source sous le graphique.'
+          ]},
+          {cell: {id: 'd-entonnoir', js: true, wait: 700, code: `const lieux = await d3.csv("data/restaurants.csv", d3.autoType);
+const points = lieux.filter(d => d.note != null && d.nb_avis > 0);
+const cle = d => [d.nom, d.lat, d.lng].join("|");
+const duree = matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 550;
+let selection = null;
+chart.classList.add("td-story");
+const titre = d3.select(chart).append("h3");
+const controles = d3.select(chart).append("div").attr("class", "story-policy");
+const choixType = controles.append("label").text("Périmètre ").append("select").attr("aria-label", "Type de lieu");
+choixType.selectAll("option").data([["restaurant", "Restaurants identifiés"], ["café", "Cafés identifiés"], ["tous", "Tous les lieux"]])
+  .join("option").attr("value", d => d[0]).text(d => d[1]);
+const etiquette = controles.append("label").text("Au moins ");
+const valeur = etiquette.append("output").text(50);
+etiquette.append("span").text(" avis ");
+const seuil = etiquette.append("input").attr("type", "range").attr("aria-label", "Nombre minimum d’avis")
+  .attr("min", 1).attr("max", 100).attr("value", 50);
+const L = 680, H = 340, M = {haut: 20, droite: 20, bas: 38, gauche: 42};
 const x = d3.scaleLog().domain([1, 500]).range([M.gauche, L - M.droite]);
 const y = d3.scaleLinear().domain([1, 5]).range([H - M.bas, M.haut]);
+const svg = d3.select(chart).append("svg").attr("viewBox", "0 0 " + L + " " + H);
+svg.append("g").attr("transform", "translate(0," + (H - M.bas) + ")").call(d3.axisBottom(x).ticks(5, "~s"));
+svg.append("g").attr("transform", "translate(" + M.gauche + ",0)").call(d3.axisLeft(y).ticks(4));
+svg.append("text").attr("x", L - M.droite).attr("y", H - 5).attr("text-anchor", "end").attr("font-size", 11).text("Nombre d’avis · échelle logarithmique");
+const nuage = svg.append("g");
+const bilan = d3.select(chart).append("p").attr("class", "story-reading").attr("aria-live", "polite");
+d3.select(chart).append("p").attr("class", "story-source").text("Gris : les autres lieux notés restent visibles. Mauve : les lieux retenus par votre règle. Les fiches signalées fermées sont écartées.");
+const liste = d3.select(chart).append("div").attr("class", "story-controls story-shortlist");
+const fiche = d3.select(chart).append("p").attr("class", "story-selection").attr("aria-live", "polite");
+const bulle = d3.select(chart).append("div").attr("class", "d4-tip").attr("role", "tooltip").style("opacity", 0);
 
-const svg = d3.select(chart).append("svg").attr("viewBox", \`0 0 \${L} \${H}\`);
-svg.append("g").attr("transform", \`translate(0,\${H - M.bas})\`).call(d3.axisBottom(x).ticks(5, "~s"));
-svg.append("g").attr("transform", \`translate(\${M.gauche},0)\`).call(d3.axisLeft(y).ticks(4));
-svg.append("text").attr("x", L - M.droite).attr("y", H - 6).attr("text-anchor", "end")
-  .attr("font-size", 12).text("nombre d'avis (échelle log)");
-
-const cle = d => d.nom + d.lat;   // plusieurs lieux portent le même nom (des succursales)
-svg.append("g").selectAll("circle").data(restos, cle).join("circle")
-  .attr("cx", d => x(d.nb_avis)).attr("cy", d => y(d.note))
-  .attr("r", 4).attr("fill", "#8a4f8c").attr("opacity", 0.45);
-
-// 1. Survol : une bulle (nom, note, avis)
-// 2. Filtre : un curseur « au moins n avis »
-`,
-            check: (c, code) => [
-              [Q(c, 'circle').length >= 20, 'Les restaurants sont dessinés'],
-              [/pointer(enter|move)|mouse(enter|over|move)/.test(code), 'Un survol (pointerenter ou mouseenter)'],
-              [Q(c, 'input[type=range]').length >= 1, 'Un curseur'],
-              [/\.join\(/.test(code) && /input/.test(code), 'Le curseur redessine avec .join()']
+function dessiner(premier = false) {
+  const type = choixType.property("value"), minimum = +seuil.property("value");
+  const perimetre = lieux.filter(d => type === "tous" || d.type === type);
+  const eligible = perimetre.filter(d => !d.ferme && d.note != null && d.nb_avis > 0);
+  const retenus = eligible.filter(d => d.nb_avis >= minimum).sort((a, b) =>
+    d3.descending(a.note, b.note) || d3.descending(a.nb_avis, b.nb_avis));
+  const ids = new Set(retenus.map(cle));
+  valeur.text(minimum); bulle.style("opacity", 0);
+  titre.text(retenus.length + " adresses retenues avec au moins " + minimum + " avis");
+  bilan.text(perimetre.length + " fiches dans le périmètre ; " + perimetre.filter(d => d.ferme).length +
+    " signalées fermées ; " + perimetre.filter(d => !d.ferme && (d.note == null || d.nb_avis <= 0)).length +
+    " sans note ; " + eligible.filter(d => d.nb_avis < minimum).length + " sous le seuil.");
+  const cercles = nuage.selectAll("circle").data(points, cle).join("circle")
+    .attr("cx", d => x(d.nb_avis)).attr("cy", d => y(d.note))
+    .attr("aria-label", d => d.nom + ", " + d.note + " sur 5, " + d.nb_avis + " avis. Sélectionner.")
+    .on("pointerenter", (e, d) => {
+      bulle.selectAll("*").remove(); bulle.append("b").text(d.nom);
+      bulle.append("div").text(d.note + " / 5 · " + d.nb_avis + " avis");
+      bulle.append("div").text(ids.has(cle(d)) ? "Retenu par votre règle" : "Hors de votre sélection : type, fermeture ou seuil");
+      bulle.style("opacity", 1);
+    }).on("pointermove", e => {
+      const [px, py] = d3.pointer(e, chart);
+      bulle.style("left", Math.max(4, Math.min(px + 12, chart.clientWidth - bulle.node().offsetWidth - 4)) + "px")
+        .style("top", Math.max(4, py - 10) + "px");
+    }).on("pointerleave", () => bulle.style("opacity", 0))
+    .on("click", (e, d) => choisir(d));
+  cercles.interrupt().transition().duration(premier ? 0 : duree)
+    .attr("r", d => cle(d) === selection ? 7 : ids.has(cle(d)) ? 4.5 : 2.5)
+    .attr("fill", d => ids.has(cle(d)) ? "#8a4f8c" : "#a3a8b3")
+    .attr("opacity", d => ids.has(cle(d)) || cle(d) === selection ? .9 : .18)
+    .attr("stroke", d => cle(d) === selection ? "#1d2433" : "none");
+  // Deuxième vue : elle reçoit exactement les mêmes données filtrées que le nuage.
+  liste.selectAll("button").data([], cle) // À vous : les huit premières fiches retenues
+    .join("button")
+    .attr("type", "button").attr("class", "chip story-pick").attr("aria-pressed", d => String(cle(d) === selection))
+    .text(d => d.nom + " · " + d.note + " / 5 · " + d.nb_avis + " avis").on("click", (e, d) => choisir(d));
+  const choisie = points.find(d => cle(d) === selection);
+  fiche.text(choisie ? choisie.nom + " — " + choisie.note + " / 5 sur " + choisie.nb_avis +
+    " avis. " + (ids.has(selection) ? "Retenue par cette règle." : "Cette règle l’écarte : vérifiez le type, la fermeture ou le seuil.") :
+    "Cliquez un point ou une adresse. Gardez ce choix en passant de 10 à 50 puis 100 avis : que lui arrive-t-il ?");
+}
+function choisir(d) { selection = cle(d); dessiner(); }
+seuil.on("input", () => dessiner()); choixType.on("change", () => dessiner());
+dessiner(true);`,
+            check: c => [
+              [Q(c, 'svg circle').length === 551, '551 lieux notés restent visibles pour le contexte'],
+              [Q(c, 'input[type=range]').length === 1 && Q(c, 'select').length === 1, 'Un seuil et un périmètre manipulables'],
+              [Q(c, '[role="tooltip"]').length === 1, 'Une infobulle pour les détails'],
+              [Q(c, '.story-shortlist button').length === 8, 'Huit adresses dans la vue liée']
             ]}},
-          {details: 'Indice : la bulle et le curseur', body: '<pre class="d4-code">const bulle = d3.select(chart).style("position", "relative")\n  .append("div").attr("class", "d4-tip").style("opacity", 0);\n\npoints.on("pointerenter", (e, d) =&gt; bulle.style("opacity", 1)\n    .html(`&lt;b&gt;${d.nom}&lt;/b&gt;&lt;br&gt;${d.note} ★ · ${d.nb_avis} avis`))\n  .on("pointermove", e =&gt; {\n    const [px, py] = d3.pointer(e, chart);\n    const gauche = Math.max(4, Math.min(px + 12, chart.clientWidth - bulle.node().offsetWidth - 4));\n    bulle.style("left", gauche + "px").style("top", Math.max(4, py - 10) + "px");\n  })\n  .on("pointerleave", () =&gt; bulle.style("opacity", 0));\n\nconst curseur = d3.select(chart).insert("input", "svg")\n  .attr("type", "range").attr("min", 1).attr("max", 100).attr("value", 1);\ncurseur.on("input", function () {\n  dessiner(restos.filter(d =&gt; d.nb_avis &gt;= +this.value));\n});</pre><p>Rangez le dessin des points dans une fonction <code>dessiner(donnees)</code> qui fait le <code>.join()</code> avec la clé, et appelez-la une première fois avec tous les restaurants.</p>'},
-          {details: 'Ce que montre l’entonnoir', body: '<p>À gauche (1 à 5 avis), les notes vont de 1 à 5 : quelques avis suffisent à tout faire. À droite (plus de 50 avis), elles se resserrent entre 3,3 et 4,6. Un classement honnête fixe un seuil, ou montre le nombre d’avis à côté de la note.</p>'},
           {phase: 'Rendre'},
           {tick: [
-            'Le dossier contient <code>avant.js</code>, <code>avant.png</code>, <code>apres.js</code>, <code>apres.png</code> et <code>notes.md</code>.',
-            'Mon <code>apres.js</code> a un survol et un filtre, et je sais expliquer chaque ligne.',
-            '<code>notes.md</code> : le tableau avant / après rempli, et une remarque de l’IA refusée.',
+            '<code>avant.js</code> et <code>avant.png</code> montrent le premier classement. <code>apres.js</code> et <code>apres.png</code> montrent ma règle et ses effets.',
+            'Dans <code>notes.md</code> : mon lecteur, ma règle, les nombres à 10 / 50 / 100 avis, et une adresse dont le sort change.',
+            'Je peux expliquer pourquoi une adresse est retenue ou écartée ; je ne présente pas le seuil comme une preuve de qualité.',
             'Je zippe le dossier (<code>td3-NOM.zip</code>) et je le dépose sur Classroom.'
           ]}
         ]
@@ -627,6 +759,6 @@ console.log(villes);
   byId.roast.partHead = {k: 'Partie 2', t: 'Relire et corriger'};
   byId.react.partHead = {k: 'Partie 3', t: 'Relier deux vues'};
   byId.temps.partHead = {k: 'Ateliers complémentaires', t: 'Choisissez un défi après le parcours'};
-  byId.avant.partHead = {k: 'Partie 4', t: 'Les restaurants de Nouakchott, avant et après les skills'};
+  byId.avant.partHead = {k: 'Partie 4', t: 'Restaurants de Nouakchott : défendre une sélection'};
   td.exercises = core.concat(['temps', 'skill-d3', 'picto', 'calendrier', 'retours', 'inspiration', 'villes']).map(id => byId[id]);
 })();

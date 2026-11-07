@@ -178,6 +178,7 @@
     return c.setup ? '<details class="setup-wrap"><summary>' + esc(c.label || 'Données') + ' · s’exécute automatiquement</summary>' + cell + '</details>' : cell;
   }
   function partHTML(p) {
+    if (p.demo) return '<div class="td-demo" data-demo="' + esc(p.demo.id) + '"><p class="small">Chargement de l’exemple interactif…</p></div>';
     if (p.p) return '<p>' + inline(p.p) + '</p>';
     if (p.phase) return '<h3 class="td-phase"><span>' + p.phase + '</span>' + (p.ai ? '<span class="ai-badge ' + AI[p.ai][1] + '">' + AI[p.ai][0] + '</span>' : '') + '</h3>';
     if (p.ask) return '<div class="td-ask">' + M.mascot('cat') + '<div>' + inline(p.ask) + '</div></div>';
@@ -309,6 +310,13 @@
       reset.addEventListener('click', () => { ta.value = cell.code; reset.hidden = true; fit(); });
       if (sol[cell.id]) { sb.hidden = false; if (td.correctionPublique) sb.textContent = 'Remplir avec la correction'; sb.addEventListener('click', () => { ta.value = sol[cell.id]; reset.hidden = false; fit(); }); }
     });
+    td.exercises.forEach(ex => ex.parts.forEach(p => {
+      if (!p.demo) return;
+      const host = app.querySelector('[data-demo="' + p.demo.id + '"]');
+      Promise.resolve().then(() => p.demo.build(host)).catch(() => {
+        if (host.isConnected) host.innerHTML = '<p class="small">L’exemple n’a pas chargé. Rechargez la page ; les cellules restent disponibles.</p>';
+      });
+    }));
   }
 
   window.TD = {render, run, namespace};
