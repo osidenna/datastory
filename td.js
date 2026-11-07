@@ -65,6 +65,15 @@
       need.forEach(n => installed.add(n));
     }
     await py.loadPackagesFromImports(code, {messageCallback: () => {}});
+    // Un téléchargement raté ne lève aucune erreur : Pyodide continue sans le paquet. Pour GeoPandas, on redemande ce qui manque.
+    if (/\b(geopandas|gpd)\b/.test(code)) {
+      const manque = () => ['geopandas', 'fiona', 'pyproj', 'shapely'].filter(p => !py.loadedPackages[p]);
+      for (let i = 0; i < 3 && manque().length; i++) {
+        status('Téléchargement de GeoPandas…');
+        await py.loadPackage(manque(), {messageCallback: () => {}, errorCallback: () => {}});
+      }
+      if (manque().length) throw new Error('Téléchargement interrompu (' + manque().join(', ') + ') : vérifiez la connexion, puis cliquez de nouveau sur Exécuter.');
+    }
     // Bokeh : show() et output_notebook() sont interceptés ; les figures montrées s'affichent sous la cellule.
     if (/\bbokeh\b/.test(code) && !installed.has('bokeh-patch')) {
       py.runPython('import bokeh, bokeh.io, bokeh.plotting\ndef _ds_show(obj, *a, **k):\n    _ds_bokeh.append(obj)\nbokeh.io.show = _ds_show\nbokeh.plotting.show = _ds_show\nbokeh.io.output_notebook = lambda *a, **k: None\nbokeh.io.output_file = lambda *a, **k: None');
@@ -110,6 +119,35 @@
       return {ok, out: out.trimEnd(), value, images, checks, bokeh, bokehVersion: installed.has('bokeh-patch') ? py.runPython('bokeh.__version__') : null};
     });
   }
+  /* ---------- Cellules JavaScript (D3) ---------- */
+  // Le code tourne dans la page, avec d3 et `chart`, un div vide déjà placé sous la cellule.
+  // check(chart, code) renvoie une liste [ok, message], comme les vérifications Python.
+  const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+  async function execJS(cell, el, out, status) {
+    const chart = document.createElement('div');
+    chart.className = 'cell-chart';
+    out.innerHTML = ''; out.hidden = false; out.appendChild(chart);
+    status('Exécution…');
+    let text = '', ok = true, checks = [];
+    const show = x => typeof x === 'string' ? x : (() => { try { return JSON.stringify(x); } catch (e) { return String(x); } })();
+    const log = (...a) => { text += a.map(show).join(' ') + '\n'; };
+    const code = el.querySelector('.cell-code').value;
+    try {
+      await new AsyncFunction('d3', 'chart', 'console', code)(window.d3, chart, {log, info: log, warn: log, error: log});
+    } catch (e) {
+      ok = false;
+      text += (e && e.name ? e.name + ' : ' : '') + (e && e.message ? e.message : String(e));
+    }
+    if (ok && cell.check) {
+      await new Promise(r => setTimeout(r, cell.wait || 0)); // laisser finir une transition avant de vérifier
+      try { checks = cell.check(chart, code).map(([a, b]) => ({ok: !!a, msg: b})); } catch (e) { checks = [{ok: false, msg: 'Vérification impossible : ' + e.message}]; }
+    }
+    if (text) out.insertAdjacentHTML('beforeend', '<pre class="cell-text' + (ok ? '' : ' is-error') + '">' + esc(text.trimEnd()) + '</pre>');
+    if (checks.length) out.insertAdjacentHTML('beforeend', '<ul class="cell-checks">' + checks.map(c => '<li class="' + (c.ok ? 'ok' : 'ko') + '">' + (c.ok ? '✓ ' : '✗ ') + esc(c.msg) + '</li>').join('') + '</ul>');
+    if (checks.length && checks.every(c => c.ok)) K.confetti(el);
+    status(ok ? 'Terminé.' : 'Erreur : lisez le message ci-dessous.');
+  }
+
   async function namespace(status) {
     return job(async () => { const py = await load(status); return {ns: py.globals.get('dict')()}; });
   }
@@ -133,7 +171,7 @@
   function cellHTML(c) {
     const rows = Math.max(3, c.code.split('\n').length);
     const cell = '<div class="cell' + (c.setup ? ' cell-setup' : '') + '" data-cell="' + c.id + '">' +
-      '<textarea class="cell-code" spellcheck="false" autocapitalize="off" autocomplete="off" rows="' + rows + '" aria-label="Code Python">' + esc(c.code) + '</textarea>' +
+      '<textarea class="cell-code" spellcheck="false" autocapitalize="off" autocomplete="off" rows="' + rows + '" aria-label="' + (c.js ? 'Code JavaScript' : 'Code Python') + '">' + esc(c.code) + '</textarea>' +
       '<div class="cell-bar"><button class="btn btn-primary cell-run">▶ Exécuter</button><button class="btn btn-ghost cell-reset" hidden>Revenir au code initial</button>' +
       '<button class="btn btn-ghost cell-sol" hidden>Solution (enseignante)</button><span class="cell-status small" aria-live="polite"></span></div>' +
       '<div class="cell-out" hidden></div></div>';
@@ -181,8 +219,8 @@
       (corr ? '<div class="lesson-tools"><button class="tool td-corr-toggle" aria-pressed="false">' + corrLabel + '</button></div>' : '') +
       '<div class="td-howto">' + td.howto + '</div>' +
       '<nav class="toc" aria-label="Exercices">' + (td.exercises[0].partHead ? '' : '<ol>') + td.exercises.map((ex, k) => (ex.partHead ? (k ? '</ol>' : '') + '<p class="toc-part">' + ex.partHead.k + ' · ' + ex.partHead.t + '</p><ol>' : '') + '<li><a href="#" data-go="' + ex.id + '"><span>' + (k + 1) + '</span>' + ex.title + (ex.extra ? ' <em class="small">(en plus)</em>' : '') + '</a></li>').join('') + '</ol></nav></header>' +
-      td.exercises.map((ex, k) => (ex.partHead ? '<div class="part-head"><span>' + ex.partHead.k + '</span><h2>' + ex.partHead.t + '</h2></div>' : '') + (ex.teacher ? (td.exercises[k - 1].teacher ? '' : '<div class="part-head"><span>Version enseignante · locale, jamais publiée</span><h2>Le code complet</h2></div>') : ex.extra && !td.exercises[k - 1].extra ? '<div class="part-head"><span>Pour aller plus loin</span><h2>Si vous avez fini</h2></div>' : '') +
-        '<section class="step td-ex' + (ex.teacher ? ' td-teacher' : '') + '" id="' + ex.id + '"><div class="step-kicker"><span class="n">' + (ex.teacher ? 'Référence' : 'Exercice ' + (k + 1)) + '</span><span>≈ ' + ex.minutes + ' min</span>' +
+      td.exercises.map((ex, k) => (ex.partHead ? '<div class="part-head"><span>' + ex.partHead.k + '</span><h2>' + ex.partHead.t + '</h2></div>' : '') + (ex.teacher ? (td.exercises[k - 1].teacher ? '' : '<div class="part-head"><span>Version enseignante · locale, jamais publiée</span><h2>Le code complet</h2></div>') : ex.extra && !td.exercises[k - 1].extra && !ex.partHead ? '<div class="part-head"><span>Pour aller plus loin</span><h2>Si vous avez fini</h2></div>' : '') +
+        '<section class="step td-ex' + (ex.teacher ? ' td-teacher' : '') + '" id="' + ex.id + '"><div class="step-kicker"><span class="n">' + (ex.teacher ? 'Référence' : 'Exercice ' + (k + 1)) + '</span>' + (ex.minutes ? '<span>≈ ' + ex.minutes + ' min</span>' : '') +
         '<button class="chip td-mark" data-ex="' + ex.id + '" aria-pressed="' + (marks[ex.id] ? 'true' : 'false') + '">' + (marks[ex.id] ? '✓ Fait' : 'Marquer comme fait') + '</button></div>' +
         '<h2>' + ex.title + '</h2>' + (ex.lead ? '<p class="step-lead">' + inline(ex.lead) + '</p>' : '') +
         '<div class="step-body">' + ex.parts.map(partHTML).join('') + '</div>' + (corr && !ex.teacher ? corrHTML(ex, corr, solAll) : '') + '</section>').join('') +
@@ -225,8 +263,10 @@
     async function exec(cell, el, quiet) {
       const out = el.querySelector('.cell-out'), st = el.querySelector('.cell-status'), btn = el.querySelector('.cell-run');
       const status = s => { st.textContent = s; };
+      if (btn.disabled) return;
       btn.disabled = true;
       try {
+        if (cell.js) { await execJS(cell, el, out, status); return; }
         const space = await ns(status);
         // Comme « exécuter tout ce qui précède » : les cellules de données de la page, puis les cellules
         // précédentes du même exercice qui n'ont pas encore tourné (imports, variables).

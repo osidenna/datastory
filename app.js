@@ -45,13 +45,15 @@
   function lesson(id) {
     const les = L[id], ses = S.sessions.find(s => s.id === id);
     if (!les) return home();
+    const coreCount = les.coreCount || les.steps.length;
+    const stepLabel = i => i < coreCount ? (i + 1) + ' / ' + coreCount : 'Atelier ' + (i - coreCount + 1) + ' / ' + (les.steps.length - coreCount);
     document.title = ses.type + ' ' + ses.n + ' · ' + les.title;
     const key = 'ds-unlock-' + id;
     let unlocked = 1;
     try { unlocked = Math.max(1, Math.min(les.steps.length, +localStorage.getItem(key) || 1)); } catch (e) { /* stockage indisponible */ }
     app.innerHTML = '<main class="lesson"><header class="lesson-head"><div class="crumbs"><a href="#/">Le cours</a> / ' + ses.type + ' ' + ses.n + '</div>' +
       '<h1>' + les.title + '</h1><p class="lede">' + les.lede + '</p>' + (les.model ? '<p class="model">' + les.model + '</p>' : '') +
-      '<div class="lesson-tools"><button class="tool" data-present>▶ Présenter</button><button class="tool" data-all>Tout afficher</button><button class="tool" data-restart>Recommencer</button><span class="small" style="align-self:center">' + les.steps.length + ' activités</span></div>' + toc(les) + '</header>' +
+      (les.overview || '') + '<div class="lesson-tools"><button class="tool" data-present>▶ Présenter</button><button class="tool" data-all>Tout afficher</button><button class="tool" data-restart>Recommencer</button><span class="small" style="align-self:center">' + (les.activityLabel || les.steps.length + ' activités') + '</span></div>' + toc(les) + '</header>' +
       '<div data-steps></div>' + foot(les, ses) + '</main><div class="present-bar"><button data-prev aria-label="Étape précédente">←</button><span data-pos></span><button data-next aria-label="Étape suivante">→</button><button data-exit>Quitter</button></div>';
     const host = app.querySelector('[data-steps]');
     const nodes = [];
@@ -68,7 +70,7 @@
         cue = m ? '<span class="prof-cue">≈ ' + m + ' min · ' + before + '→' + (before + m) + ' min</span>'
           : (les.reserve && les.reserve[st.id] ? '<span class="prof-cue">≈ ' + les.reserve[st.id] + ' min · en plus</span>' : '');
       }
-      sec.innerHTML = '<div class="step-kicker"><span class="n">' + (i + 1) + ' / ' + les.steps.length + '</span><span>' + st.kicker + '</span>' + cue + '</div>' +
+      sec.innerHTML = '<div class="step-kicker"><span class="n">' + stepLabel(i) + '</span><span>' + st.kicker + '</span>' + cue + '</div>' +
         '<h2>' + st.title + '</h2><p class="step-lead">' + st.lead + '</p><div class="step-body"></div>' +
         (i < les.steps.length - 1 ? '<div class="continue"><button class="btn btn-primary">' + (st.next || 'Continuer') + '</button></div>' : '');
       host.appendChild(sec);
@@ -84,7 +86,7 @@
     const save = () => { try { localStorage.setItem(key, unlocked); } catch (e) { /* rien */ } };
     const footEl = app.querySelector('.lesson-foot');
     const endAt = les.endAt ? les.steps.findIndex(s => s.id === les.endAt) : les.steps.length - 1;
-    const progress = () => { bar.style.width = (100 * unlocked / les.steps.length) + '%'; if (footEl) footEl.hidden = unlocked < endAt + 1; };
+    const progress = () => { bar.style.width = (100 * Math.min(unlocked, coreCount) / coreCount) + '%'; if (footEl) footEl.hidden = unlocked < endAt + 1; };
     function reveal(i, scroll) {
       if (i >= les.steps.length) return;
       if (!nodes[i]) { const s = build(i); if (scroll) s.classList.add('is-new'); }
@@ -113,7 +115,7 @@
       nodes.forEach((n, j) => n && n.classList.toggle('is-current', j === cur));
       const plan = les.plan || {}, mins = plan[les.steps[cur].id];
       const before = les.steps.slice(0, cur).reduce((acc, st) => acc + (plan[st.id] || 0), 0);
-      pos.textContent = (cur + 1) + ' / ' + les.steps.length + (mins ? ' · ≈ ' + mins + ' min · repère ' + before + '→' + (before + mins) + ' min' : '');
+      pos.textContent = stepLabel(cur) + (mins ? ' · ≈ ' + mins + ' min · repère ' + before + '→' + (before + mins) + ' min' : '');
       window.scrollTo(0, 0);
     };
     const key2 = e => {
@@ -130,9 +132,9 @@
       const vis = nodes.findIndex(n => n && n.getBoundingClientRect().bottom > 120);
       go(vis < 0 ? 0 : vis);
     });
-    app.querySelector('[data-prev]').addEventListener('click', () => go(cur - 1));
-    app.querySelector('[data-next]').addEventListener('click', () => go(cur + 1));
-    app.querySelector('[data-exit]').addEventListener('click', exit);
+    app.querySelector('.present-bar [data-prev]').addEventListener('click', () => go(cur - 1));
+    app.querySelector('.present-bar [data-next]').addEventListener('click', () => go(cur + 1));
+    app.querySelector('.present-bar [data-exit]').addEventListener('click', exit);
     document.onkeydown = key2;
     const hash = location.hash.split('/')[2];
     if (hash) { const i = les.steps.findIndex(s => s.id === hash); if (i >= 0) { reveal(i, false); setTimeout(() => nodes[i].scrollIntoView(), 50); return; } }
