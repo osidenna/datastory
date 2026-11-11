@@ -217,7 +217,7 @@
     td.exercises.forEach(ex => ex.parts.forEach(p => { if (p.cell) { cells.push(p.cell); exOf[p.cell.id] = ex.id; } }));
     app.innerHTML = '<main class="lesson td"><header class="lesson-head"><div class="crumbs"><a href="#/">Le cours</a> / ' + ses.type + ' ' + ses.n + '</div>' +
       '<h1>' + td.title + '</h1><p class="lede">' + td.lede + '</p>' + (td.model ? '<p class="model">' + td.model + '</p>' : '') +
-      (corr ? '<div class="lesson-tools"><button class="tool td-corr-toggle" aria-pressed="false">' + corrLabel + '</button></div>' : '') +
+      '<div class="lesson-tools">' + (corr ? '<button class="tool td-corr-toggle" aria-pressed="false">' + corrLabel + '</button>' : '') + '<button class="tool" data-pdf>⬇ Exporter en PDF</button></div>' +
       '<div class="td-howto">' + td.howto + '</div>' +
       '<nav class="toc" aria-label="Exercices">' + (td.exercises[0].partHead ? '' : '<ol>') + td.exercises.map((ex, k) => (ex.partHead ? (k ? '</ol>' : '') + '<p class="toc-part">' + ex.partHead.k + ' · ' + ex.partHead.t + '</p><ol>' : '') + '<li><a href="#" data-go="' + ex.id + '"><span>' + (k + 1) + '</span>' + ex.title + (ex.extra ? ' <em class="small">(en plus)</em>' : '') + '</a></li>').join('') + '</ol></nav></header>' +
       td.exercises.map((ex, k) => (ex.partHead ? '<div class="part-head"><span>' + ex.partHead.k + '</span><h2>' + ex.partHead.t + '</h2></div>' : '') + (ex.teacher ? (td.exercises[k - 1].teacher ? '' : '<div class="part-head"><span>Version enseignante · locale, jamais publiée</span><h2>Le code complet</h2></div>') : ex.extra && !td.exercises[k - 1].extra && !ex.partHead ? '<div class="part-head"><span>Pour aller plus loin</span><h2>Si vous avez fini</h2></div>' : '') +

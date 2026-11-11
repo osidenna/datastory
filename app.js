@@ -42,6 +42,29 @@
     return '<footer class="lesson-foot" hidden>' + (les.footer || '') + '<div class="nav-cards">' + card(pv, 'prev') + card(nx, 'next') + '</div></footer>';
   }
 
+  // Export PDF : la séance entière passe par l'impression du navigateur (« Enregistrer au format PDF »).
+  // prepare() affiche tout ; restore() remet la page comme avant. La progression de l'étudiant n'est pas modifiée.
+  function exportPDF(btn, prepare, restore) {
+    const y = window.scrollY, label = btn.textContent;
+    btn.disabled = true; btn.textContent = 'Préparation…';
+    if (prepare) prepare();
+    const closed = [...app.querySelectorAll('details:not([open])')];
+    closed.forEach(d => { d.open = true; });
+    app.querySelectorAll('.scrolly').forEach(b => b.dsFinal && b.dsFinal());
+    const codes = [...app.querySelectorAll('textarea.cell-code')];
+    codes.forEach(t => { t.style.height = (t.scrollHeight + 4) + 'px'; });
+    const done = () => {
+      window.removeEventListener('afterprint', done);
+      closed.forEach(d => { d.open = false; });
+      codes.forEach(t => { t.style.height = ''; });
+      btn.disabled = false; btn.textContent = label;
+      if (restore) restore();
+      window.scrollTo(0, y);
+    };
+    window.addEventListener('afterprint', done);
+    setTimeout(() => window.print(), 900); // laisser finir les transitions des graphiques
+  }
+
   function lesson(id) {
     const les = L[id], ses = S.sessions.find(s => s.id === id);
     if (!les) return home();
@@ -53,7 +76,7 @@
     try { unlocked = Math.max(1, Math.min(les.steps.length, +localStorage.getItem(key) || 1)); } catch (e) { /* stockage indisponible */ }
     app.innerHTML = '<main class="lesson"><header class="lesson-head"><div class="crumbs"><a href="#/">Le cours</a> / ' + ses.type + ' ' + ses.n + '</div>' +
       '<h1>' + les.title + '</h1><p class="lede">' + les.lede + '</p>' + (les.model ? '<p class="model">' + les.model + '</p>' : '') +
-      (les.overview || '') + '<div class="lesson-tools"><button class="tool" data-present>▶ Présenter</button><button class="tool" data-all>Tout afficher</button><button class="tool" data-restart>Recommencer</button><span class="small" style="align-self:center">' + (les.activityLabel || les.steps.length + ' activités') + '</span></div>' + toc(les) + '</header>' +
+      (les.overview || '') + '<div class="lesson-tools"><button class="tool" data-present>▶ Présenter</button><button class="tool" data-all>Tout afficher</button><button class="tool" data-restart>Recommencer</button><button class="tool" data-pdf>⬇ Exporter en PDF</button><span class="small" style="align-self:center">' + (les.activityLabel || les.steps.length + ' activités') + '</span></div>' + toc(les) + '</header>' +
       '<div data-steps></div>' + foot(les, ses) + '</main><div class="present-bar"><button data-prev aria-label="Étape précédente">←</button><span data-pos></span><button data-next aria-label="Étape suivante">→</button><button data-exit>Quitter</button></div>';
     const host = app.querySelector('[data-steps]');
     const nodes = [];
@@ -104,6 +127,10 @@
     app.querySelector('[data-all]').addEventListener('click', () => {
       for (let i = 0; i < les.steps.length; i++) { reveal(i, false); const c = nodes[i].querySelector('.continue'); if (c) c.hidden = true; }
     });
+    app.querySelector('[data-pdf]').addEventListener('click', e => exportPDF(e.currentTarget, () => {
+      for (let i = 0; i < les.steps.length; i++) { if (!nodes[i]) build(i); const c = nodes[i].querySelector('.continue'); if (c) c.hidden = true; }
+      if (footEl) footEl.hidden = false;
+    }, () => lesson(id)));
     app.querySelector('[data-restart]').addEventListener('click', () => { try { localStorage.removeItem(key); } catch (e) { /* rien */ } lesson(id); });
 
     // Projection
@@ -147,7 +174,7 @@
   function td(id) {
     const ses = S.sessions.find(s => s.id === id);
     bar.style.width = '0';
-    const go = () => { window.TD.render(app, T[id], ses, {foot}); const h = location.hash.split('/')[2]; if (h && document.getElementById(h)) document.getElementById(h).scrollIntoView(); else window.scrollTo(0, 0); };
+    const go = () => { window.TD.render(app, T[id], ses, {foot}); app.querySelector('[data-pdf]').addEventListener('click', e => exportPDF(e.currentTarget)); const h = location.hash.split('/')[2]; if (h && document.getElementById(h)) document.getElementById(h).scrollIntoView(); else window.scrollTo(0, 0); };
     if (solTried[id]) return go();
     solTried[id] = true;
     const s = document.createElement('script');

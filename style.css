@@ -598,3 +598,25 @@ table.data.d4-install th, table.data.d4-install td, table.data.d4-cmp th, table.
 .td-story table { border-collapse: collapse; font-size: 14px; table-layout: fixed; }
 .td-story th, .td-story td { padding: 6px; border-bottom: 1px solid #e5e7eb; text-align: center; overflow-wrap: anywhere; }
 .td-story th:first-child, .td-story td:first-child { width: 64%; text-align: start; }
+
+/* Export PDF (impression) : toute la séance sur A4, sans les commandes. */
+@media print {
+  @page { size: A4; margin: 14mm 12mm; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  html, body { background: #fff !important; }
+  .site-header, .lesson-tools, .toc, .continue, .present-bar, .nav-cards, .cell-bar, .td-mark { display: none !important; }
+  .lesson { padding: 0; }
+  .lesson-head, .step, .part-head { max-width: none; }
+  .step.is-new { animation: none; }
+  .step-kicker, h1, h2, h3, summary { break-after: avoid; }
+  svg, img, canvas, table, pre, .cell, .q, .sc-card { break-inside: avoid; }
+  svg.chart, .sc-chart svg.chart { max-height: 210mm; max-width: 100%; }
+  .scrolly { display: block; width: auto; margin: 14px 0; }
+  .sc-graphic { position: static; padding: 0; }
+  .sc-chart { position: static; }
+  .sc-steps { padding: 10px 0 0; }
+  .sc-step, .sc-step:last-child { min-height: 0; margin-bottom: 8px; }
+  .sc-card { opacity: 1; box-shadow: none; font-size: 15px; }
+  textarea.cell-code { overflow: hidden; resize: none; white-space: pre-wrap; }
+  a { color: inherit; }
+}

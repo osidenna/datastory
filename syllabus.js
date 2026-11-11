@@ -22,10 +22,10 @@ window.DS_SYLLABUS = {
       gist: '90 min sur les présidentielles 2019 et 2024, suite du TD 2 : pourquoi interagir (survol, filtre, zoom), sans cacher le message ; un graphique D3 puis son survol ; pictogramme, carte, pentes ; vues liées en React.', from: 'nouveau ; idées de Yan Holtz'},
     {id: 'td-d3', type: 'TD', n: 3, title: 'Un récit en D3.js', status: 'ready',
       gist: '90 min sur les prêts d’une bibliothèque : un graphique, sa relecture et deux vues liées dans React. Ateliers complémentaires au choix.', from: 'nouveau ; dataviz-skills (Yan Holtz)'},
-    {id: 'cm5', type: 'CM', n: 5, title: 'Dashboards : no-code et code', status: 'soon',
-      gist: 'État, logique, vues ; ce que le no-code cache, et quand il suffit.', from: 'cm4.pptx'},
-    {id: 'td-dash', type: 'TD', n: 4, title: 'Un dashboard, sans code puis en code', status: 'soon',
-      gist: 'Trois paramètres directeurs, des vues liées, deux chemins.', from: 'nouveau'},
+    {id: 'cm5', type: 'CM', n: 5, title: 'Dashboards : no-code et code', status: 'ready',
+      gist: 'Les restaurants de Nouakchott : un lecteur, trois questions ; état, logique, vues ; ce que Looker Studio décide à votre place, et quand passer à React + D3.', from: 'cm4.pptx'},
+    {id: 'td-dash', type: 'TD', n: 4, title: 'Un dashboard, sans code puis en code', status: 'ready',
+      gist: 'Le même tableau de bord deux fois : Looker Studio, puis React + D3 dans le kit du TD 3.', from: 'nouveau'},
     {id: 'td2', type: 'TD', n: 'extra', title: 'Visualisations interactives avec Bokeh', status: 'ready',
       gist: 'En plus du programme : survol, zoom, curseurs, à votre rythme.', from: 'bokeh.ipynb'}
   ]

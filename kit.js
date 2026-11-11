@@ -103,6 +103,7 @@
       opts.onStep && opts.onStep(i);
     };
     go(0);
+    box.dsFinal = () => go(items.length - 1); // export PDF : le graphique dans son état final
     if ('IntersectionObserver' in window) {
       const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) go(+e.target.dataset.i); }), {rootMargin: '-40% 0px -55% 0px'});
       items.forEach(s => io.observe(s));
