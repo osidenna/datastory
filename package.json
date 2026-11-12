@@ -1,0 +1,10 @@
+{
+  "name": "datastory",
+  "private": true,
+  "scripts": {
+    "test": "node --test tests/i18n.test.cjs"
+  },
+  "devDependencies": {
+    "playwright": "1.65.0"
+  }
+}

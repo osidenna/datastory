@@ -45,7 +45,7 @@
   // Export PDF : la séance entière passe par l'impression du navigateur (« Enregistrer au format PDF »).
   // prepare() affiche tout ; restore() remet la page comme avant. La progression de l'étudiant n'est pas modifiée.
   function exportPDF(btn, prepare, restore) {
-    const y = window.scrollY, label = btn.textContent;
+    const y = window.scrollY, label = window.DS_I18N ? window.DS_I18N.sourceText(btn) : btn.textContent;
     btn.disabled = true; btn.textContent = 'Préparation…';
     if (prepare) prepare();
     const closed = [...app.querySelectorAll('details:not([open])')];
