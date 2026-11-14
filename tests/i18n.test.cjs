@@ -2,6 +2,7 @@ const {test, before, after} = require('node:test');
 const assert = require('node:assert/strict');
 const {createServer} = require('node:http');
 const {readFile} = require('node:fs/promises');
+const {runInNewContext} = require('node:vm');
 const path = require('node:path');
 const {chromium} = require('playwright');
 
@@ -52,27 +53,28 @@ test('French is the default; English persists across navigation and reloads', as
 });
 
 test('all available routes translate and restore the original text', async () => {
-  const page = await browser.newPage();
   const errors = [];
-  page.on('pageerror', error => errors.push(error.message));
   for (const id of ['cm1', 'cm2', 'cm3', 'cm4', 'cm5', 'td1', 'td2', 'td3', 'td-d3', 'td-dash']) {
-    await page.goto(base + '/#/' + id);
-    await page.waitForSelector('h1');
-    if (await page.locator('[data-all]').count()) await page.locator('[data-all]').click();
-    const heading = await page.locator('h1').textContent();
-    const lead = await page.locator('.lede').textContent();
-    const title = await page.title();
-    const count = await page.locator('.step').count();
-    await language(page, 'en');
-    assert.notEqual(await page.locator('.lede').textContent(), lead, id);
-    assert.equal(await page.locator('.step').count(), count, id);
-    await language(page, 'fr');
-    assert.equal(await page.locator('h1').textContent(), heading, id);
-    assert.equal(await page.locator('.lede').textContent(), lead, id);
-    assert.equal(await page.title(), title, id);
+    const page = await browser.newPage();
+    page.on('pageerror', error => errors.push(error.message));
+    try {
+      await page.goto(base + '/#/' + id);
+      await page.waitForSelector('h1');
+      if (await page.locator('[data-all]').count()) await page.locator('[data-all]').click();
+      const heading = await page.locator('h1').textContent();
+      const lead = await page.locator('.lede').textContent();
+      const title = await page.title();
+      const count = await page.locator('.step').count();
+      await language(page, 'en');
+      assert.notEqual(await page.locator('.lede').textContent(), lead, id);
+      assert.equal(await page.locator('.step').count(), count, id);
+      await language(page, 'fr');
+      assert.equal(await page.locator('h1').textContent(), heading, id);
+      assert.equal(await page.locator('.lede').textContent(), lead, id);
+      assert.equal(await page.title(), title, id);
+    } finally { await page.close(); }
   }
   assert.deepEqual(errors, []);
-  await page.close();
 });
 
 test('switching preserves unsaved code, completion marks, hash and scroll', async () => {
@@ -150,4 +152,80 @@ test('PDF export restores its source label and progress after English printing',
   await language(page, 'fr');
   assert.equal(await page.locator('[data-pdf]').textContent(), '⬇ Exporter en PDF');
   await page.close();
+});
+
+test('English lesson formulas retain their division operators and operands', async t => {
+  const cases = [
+    {name: 'CM2 lie factor', route: 'cm2', selector: '#mensonge .info-box', formula: /22,1\s*÷\s*\(22,1\s*[−-]\s*base\)/},
+    {name: 'CM2 relative decline', route: 'cm2', selector: '#mensonge .info-box .td-list li:first-child', formula: /3,3\s*÷\s*22,1\s*=/},
+    {name: 'CM4 turnout', route: 'cm4', selector: '#survol .viz-caption', formula: /(?:Turnout|Participation)\s*:\s*voters\s*÷\s*registered voters/i},
+    {name: 'TD3 national population share', route: 'td3', selector: '[data-ctrl="c-nat"] label', formula: /pop_5km\s*÷\s*sum of\s*pop_tot/}
+  ];
+  for (const {name, route, selector, formula} of cases) await t.test(name, async () => {
+    const page = await browser.newPage();
+    try {
+      await page.goto(base + '/#/' + route);
+      await page.waitForSelector('h1');
+      if (await page.locator('[data-all]').count()) await page.locator('[data-all]').click();
+      const text = page.locator(selector);
+      const french = await text.textContent();
+      await language(page, 'en');
+      assert.match(await text.textContent(), formula);
+      await language(page, 'fr');
+      assert.equal(await text.textContent(), french);
+    } finally { await page.close(); }
+  });
+});
+
+test('English TD3 instructions keep the filenames used by the kit and downloads', async t => {
+  const page = await browser.newPage();
+  try {
+    await page.goto(base + '/#/td-d3');
+    await page.waitForSelector('#roast .td-prompt');
+    const prompts = [
+      {name: 'review prompt', selector: '#roast .td-prompt', filename: 'caveats.md'},
+      {name: 'first draft prompt', selector: '#avant .td-prompt', filename: 'avant.js'},
+      {name: 'revised draft prompt', selector: '#apres details li:nth-child(2) .td-prompt', filename: 'apres.js'}
+    ];
+    const french = await Promise.all(prompts.map(({selector}) => page.locator(selector).textContent()));
+    await language(page, 'en');
+    for (const {name, selector, filename} of prompts) await t.test(name, async () => {
+      assert.ok((await page.locator(selector).textContent()).includes(filename), filename);
+    });
+    await t.test('download link labels match their actual files', async () => {
+      const filenames = ['categories.csv', 'prets-mois.csv', 'prets-jour.csv', 'durees.csv', 'restaurants.csv'];
+      const labels = await Promise.all(filenames.map(filename => page.locator('a[download][href="data/' + filename + '"]').textContent()));
+      assert.deepEqual(labels, filenames);
+    });
+    await language(page, 'fr');
+    assert.deepEqual(await Promise.all(prompts.map(({selector}) => page.locator(selector).textContent())), french);
+  } finally { await page.close(); }
+});
+
+test('English CM2 question preserves the direction of the Biden vote comparison', async () => {
+  const page = await browser.newPage();
+  try {
+    await page.goto(base + '/#/cm2');
+    const question = page.locator('#honte .sc-step[data-i="2"] .sc-ask');
+    const french = await question.textContent();
+    assert.equal(french, 'Biden a-t-il presque deux fois moins de voix ?');
+    await language(page, 'en');
+    assert.match(await question.textContent(), /Biden.*almost half as many votes/);
+    await language(page, 'fr');
+    assert.equal(await question.textContent(), french);
+  } finally { await page.close(); }
+});
+
+test('catalog translations preserve mathematical operators and literal filenames', async () => {
+  const context = {window: {}};
+  runInNewContext(await readFile(path.join(__dirname, '..', 'locales/en.js'), 'utf8'), context);
+  const failures = [];
+  const filenames = text => (text.match(/[A-Za-z0-9_-]+\.(?:csv|js|md)\b/g) || []).sort();
+  for (const [source, translated] of Object.entries(context.window.DS_EN)) {
+    for (const operator of ['÷', '×', '≈']) {
+      if (source.split(operator).length !== translated.split(operator).length) failures.push({source, operator});
+    }
+    if (JSON.stringify(filenames(source)) !== JSON.stringify(filenames(translated))) failures.push({source, filenames: filenames(source)});
+  }
+  assert.deepEqual(failures, []);
 });
