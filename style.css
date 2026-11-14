@@ -60,6 +60,16 @@ mark { color: inherit; padding: .12em .34em .1em; margin: 0 -.1em; -webkit-box-d
 .header-nav a, .header-nav button { border: 0; background: none; padding: 6px 0; font-weight: 700; letter-spacing: .04em; text-decoration: none; color: var(--ink-2); }
 .header-nav a:hover, .header-nav button:hover { color: var(--ink); }
 .header-nav .edition { font-weight: 400; color: var(--muted); font-size: 13px; }
+.language-select { max-width: 110px; padding: 5px 8px; border: 1px solid var(--line-strong); border-radius: 5px; background: var(--paper); font-size: 14px; }
+.translation-note { max-width: 960px; margin: 16px auto 0; padding: 0 20px; color: var(--ink-2); font-size: 14px; }
+.present .translation-note { display: none; }
+@media (max-width: 480px) {
+  .site-header { padding-inline: 10px; gap: 8px; }
+  .brand-name { font-size: 16px; }
+  .brand-code { display: none; }
+  .header-nav { gap: 10px; }
+  .language-select { max-width: 94px; padding-inline: 4px; }
+}
 .progress { position: absolute; left: 0; bottom: -1px; height: 3px; background: var(--accent); width: 0; transition: width .3s ease; }
 
 /* Accueil */
